@@ -1,0 +1,1 @@
+docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --name mowbot_uros_agent --privileged --net=host microros/micro-ros-agent:humble serial --dev /dev/MBB-UROS -v6 

@@ -1,0 +1,8 @@
+# qt5-qmake
+# PyQt5==5.15.11
+termcolor
+websockets
+pydantic
+pyyaml
+folium
+# foxglove-websocket
