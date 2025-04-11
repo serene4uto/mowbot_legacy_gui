@@ -18,9 +18,10 @@ class FoxgloveWsHandler(QObject):
     """
 
     SUBCRIBE_TOPICS = [
-        "/imu_gps_heading/data",
-        "/ublox_gpsl_node/fix",
+        "/gps/heading",
+        "/gps/fix",
         "/sensor_status",
+        "/gps/fix_filtered"
     ]
 
 
@@ -247,13 +248,13 @@ class FoxgloveWsHandler(QObject):
             # logger.info(f"  Timestamp: {timestamp}")
             # logger.info(f"  Payload (raw): {payload}")
 
-            if self.ws_subs.get(subscription_id, {}).get('topic') == '/imu_gps_heading/data':
+            if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/heading':
                 imu_data = decode_imu(payload)
                 heading_quat = imu_data.get('orientation', {})
                 self.heading_quat_signal.emit(heading_quat)
                 # logger.info(f"  IMU Data: {imu_data}")
             
-            if self.ws_subs.get(subscription_id, {}).get('topic') == '/ublox_gpsl_node/fix':
+            if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/fix':
                 navsatfix_data = decode_navsatfix(payload)
                 gps_fix = {
                     'latitude': navsatfix_data.get('latitude', 0),

@@ -11,9 +11,9 @@ GROUP_NAME=${LOCAL_GROUP}
 # Check if any of the variables are empty
 if [[ -z $USER_ID || -z $USER_NAME || -z $GROUP_ID || -z $GROUP_NAME ]]; then
     exec "$@"
-    export DISPLAY:=0
-    export QT_XCB_GL_INTEGRATION=none
-    alias python3='/usr/bin/python3'
+    # export DISPLAY:=0
+    # export QT_XCB_GL_INTEGRATION=none
+    # alias python3='/usr/bin/python3'
 else
     echo "Starting with user: $USER_NAME >> UID $USER_ID, GID: $GROUP_ID"
 
@@ -26,9 +26,9 @@ else
 
     # Source ROS2
     # hadolint ignore=SC1090
-    export DISPLAY:=0
-    export QT_XCB_GL_INTEGRATION=none
-    alias python3='/usr/bin/python3'
+    # export DISPLAY:=0
+    # export QT_XCB_GL_INTEGRATION=none
+    # alias python3='/usr/bin/python3'
 
     # Execute the command as the user
     exec /usr/sbin/gosu "$USER_NAME" "$@"

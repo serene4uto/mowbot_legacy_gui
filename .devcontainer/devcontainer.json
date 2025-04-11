@@ -1,6 +1,7 @@
 {
-  "name": "mowbot_gui",
-  "image": "python:3.10.12",
+  "name": "mowbot_legacy_gui",
+  // "image": "python:3.10.12",
+  "image": "ghcr.io/serene4uto/mowbot-legacy-gui:latest",
   "runArgs": [
     "--name",
     "mowbot_gui",
@@ -15,9 +16,6 @@
     "-e",
     "DISPLAY"
   ],
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
   "postCreateCommand": "pip install --upgrade pip && pip install pylint autopep8",
   "customizations": {
     "vscode": {
@@ -28,12 +26,5 @@
         "eamodio.gitlens"
       ]
     }
-  },
-  "settings": {
-    "python.defaultInterpreterPath": "/usr/local/bin/python3",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.formatting.autopep8Path": "/usr/local/bin/autopep8",
-    "editor.formatOnSave": true
   }
 }

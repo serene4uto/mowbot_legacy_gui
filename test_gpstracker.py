@@ -1,13 +1,20 @@
+import sys
 import json
-
-from PyQt5.QtWidgets import (
-    QWidget, 
-    QVBoxLayout, 
-    QLabel
-)
+import math
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QShortcut
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
+from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from PyQt5.QtWebChannel import QWebChannel
-from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal, QTimer, QUrl
+from PyQt5.QtGui import QKeySequence
+
+# Interceptor to set a valid Referer header for Bing Maps requests
+class BingRequestInterceptor(QWebEngineUrlRequestInterceptor):
+    def interceptRequest(self, info):
+        url = info.requestUrl().toString()
+        if "dev.virtualearth.net" in url:
+            # Set the Referer header to something Bing accepts.
+            info.setHttpHeader(b"Referer", b"https://www.bing.com")
 
 class GPSBridge(QObject):
     """Bridge between Python and JavaScript for GPS updates"""
@@ -17,9 +24,69 @@ class GPSBridge(QObject):
     def receive_from_js(self, message):
         print(f"Message from JS: {message}")
 
-class MapView(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)  
+class GPSSimulator:
+    """Simulates GPS data by iterating through predefined waypoints and calculates heading for orientation"""
+    def __init__(self):
+        # Define waypoints
+        self.waypoints = [
+            {'latitude': 37.7749, 'longitude': -122.4194},
+            {'latitude': 37.7759, 'longitude': -122.4184},
+            {'latitude': 37.7769, 'longitude': -122.4174},
+            {'latitude': 37.7779, 'longitude': -122.4164}
+        ]
+        self.current_index = 0
+        # Start at the first waypoint
+        self.latitude = self.waypoints[0]['latitude']
+        self.longitude = self.waypoints[0]['longitude']
+        self.speed = 0
+        self.tracking = False
+        self.heading = 0  # in degrees
+        
+    def start_tracking(self):
+        self.tracking = True
+        
+    def stop_tracking(self):
+        self.tracking = False
+
+    def calculate_bearing(self, lat1, lon1, lat2, lon2):
+        # Calculate bearing between two points in degrees.
+        dLon = math.radians(lon2 - lon1)
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        y = math.sin(dLon) * math.cos(lat2_rad)
+        x = math.cos(lat1_rad)*math.sin(lat2_rad) - math.sin(lat1_rad)*math.cos(lat2_rad)*math.cos(dLon)
+        bearing = math.degrees(math.atan2(y, x))
+        return (bearing + 360) % 360
+
+    def get_position(self):
+        if self.tracking:
+            previous_lat = self.latitude
+            previous_lon = self.longitude
+            # Advance to the next waypoint (looping after the last one)
+            self.current_index = (self.current_index + 1) % len(self.waypoints)
+            waypoint = self.waypoints[self.current_index]
+            self.latitude = waypoint['latitude']
+            self.longitude = waypoint['longitude']
+            self.speed = 3.5  # constant speed for simulation
+            self.heading = self.calculate_bearing(previous_lat, previous_lon, self.latitude, self.longitude)
+        else:
+            self.heading = 0
+        return {
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'speed': self.speed,
+            'tracking': self.tracking,
+            'heading': self.heading
+        }
+
+class GPSTracker(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("GPS Tracker with Bing Satellite Imagery")
+        self.setGeometry(100, 100, 1000, 700)
+        
+        # Initialize GPS simulator
+        self.gps = GPSSimulator()
         
         # Setup UI
         self.init_ui()
@@ -31,30 +98,59 @@ class MapView(QWidget):
         self.channel = QWebChannel()
         self.channel.registerObject("bridge", self.bridge)
         self.web_view.page().setWebChannel(self.channel)
-
+        
         # Load the HTML with Leaflet map, Bing layer, waypoints,
         # and a tracking marker that rotates based on heading.
         self.load_map()
-    
+        
+        # Timer for GPS updates
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start(1000)  # Update every second
+
+        # Setup F12 shortcut to open developer tools
+        self.dev_shortcut = QShortcut(QKeySequence("F12"), self)
+        self.dev_shortcut.activated.connect(self.open_dev_tools)
     
     def init_ui(self):
+        main_widget = QWidget()
         layout = QVBoxLayout()
         
         # Web view for the map
         self.web_view = QWebEngineView()
         
+        # Info section
+        info_layout = QHBoxLayout()
+        self.lat_label = QLabel("Latitude: 0.000000")
+        self.lon_label = QLabel("Longitude: 0.000000")
+        self.speed_label = QLabel("Speed: 0.0 km/h")
+        self.tracking_label = QLabel("Tracking: Off")
+        
+        info_layout.addWidget(self.lat_label)
+        info_layout.addWidget(self.lon_label)
+        info_layout.addWidget(self.speed_label)
+        info_layout.addWidget(self.tracking_label)
+        
+        # Control buttons
+        button_layout = QHBoxLayout()
+        self.start_button = QPushButton("Start Tracking")
+        self.start_button.clicked.connect(self.start_tracking)
+        self.stop_button = QPushButton("Stop Tracking")
+        self.stop_button.clicked.connect(self.stop_tracking)
+        self.stop_button.setEnabled(False)
+        self.clear_button = QPushButton("Clear Track")
+        self.clear_button.clicked.connect(self.clear_track)
+        
+        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.stop_button)
+        button_layout.addWidget(self.clear_button)
+        
         layout.addWidget(self.web_view, stretch=8)
+        layout.addLayout(info_layout)
+        layout.addLayout(button_layout)
         
-        self.setLayout(layout)
-        
-    
-    def update_position(self):
-        """Get current position and send to JavaScript"""
-        position = self.gps.get_position()
-        self.lat_label.setText(f"Latitude: {position['latitude']:.6f}")
-        self.lon_label.setText(f"Longitude: {position['longitude']:.6f}")
-        self.speed_label.setText(f"Speed: {position['speed']:.1f} km/h")
-        self.bridge.positionChanged.emit(json.dumps(position))
+        main_widget.setLayout(layout)
+        self.setCentralWidget(main_widget)
     
     def load_map(self):
         """Load the Leaflet map HTML with Bing satellite imagery and a fallback to OSM.
@@ -300,3 +396,47 @@ class MapView(QWidget):
         </html>
         """
         self.web_view.setHtml(html)
+    
+    def update_position(self):
+        """Get current position and send to JavaScript"""
+        position = self.gps.get_position()
+        self.lat_label.setText(f"Latitude: {position['latitude']:.6f}")
+        self.lon_label.setText(f"Longitude: {position['longitude']:.6f}")
+        self.speed_label.setText(f"Speed: {position['speed']:.1f} km/h")
+        self.bridge.positionChanged.emit(json.dumps(position))
+    
+    def start_tracking(self):
+        self.gps.start_tracking()
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.tracking_label.setText("Tracking: On")
+    
+    def stop_tracking(self):
+        self.gps.stop_tracking()
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.tracking_label.setText("Tracking: Off")
+    
+    def clear_track(self):
+        """Execute JavaScript to clear the dynamic track"""
+        self.web_view.page().runJavaScript("clearTrack();")
+    
+    def open_dev_tools(self):
+        """Open the developer tools window for the web view."""
+        self.dev_view = QWebEngineView()
+        self.dev_view.setWindowTitle("Dev Tools")
+        self.web_view.page().setDevToolsPage(self.dev_view.page())
+        self.dev_view.show()
+    
+    def closeEvent(self, event):
+        self.timer.stop()
+        event.accept()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    # Install the request interceptor on the default profile using the thread-safe setter.
+    profile = QWebEngineProfile.defaultProfile()
+    # profile.setUrlRequestInterceptor(BingRequestInterceptor())
+    tracker = GPSTracker()
+    tracker.show()
+    sys.exit(app.exec_())

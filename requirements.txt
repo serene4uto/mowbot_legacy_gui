@@ -1,8 +1,10 @@
 # qt5-qmake
-# PyQt5==5.15.11
+# PyQt5
+PyQtWebEngine
 termcolor
 websockets
 pydantic
 pyyaml
 folium
+
 # foxglove-websocket

@@ -44,8 +44,7 @@ class StatusBar(QWidget):
     STATUS_NAME_LIST = [
         # "AMR Base",
         "IMU",
-        "Left GPS",
-        "Right GPS",
+        "GPS",
         "Heading",
         "RTCM",
         "Lidar",
