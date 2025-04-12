@@ -3,18 +3,13 @@
   // "image": "python:3.10.12",
   "image": "ghcr.io/serene4uto/mowbot-legacy-gui:latest",
   "runArgs": [
-    "--name",
-    "mowbot_gui",
-    "--net",
-    "host",
-    // "--gpus", "all",
+    "--name", "mowbot_legacy_gui",
+    "--net", "host",
     "--privileged",
-    "-v",
-    "/dev:/dev",
-    "-v",
-    "/tmp/.X11-unix:/tmp/.X11-unix",
-    "-e",
-    "DISPLAY"
+    "-v", "/dev:/dev",
+    "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
+    "-v", "/home/mowbot/mowbot_legacy_data:/mowbot_legacy_data",
+    "-e", "DISPLAY"
   ],
   "postCreateCommand": "pip install --upgrade pip && pip install pylint autopep8",
   "customizations": {

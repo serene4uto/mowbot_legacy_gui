@@ -13,3 +13,7 @@ cleaning_script: "/home/farmbot/mowbot_project/mowbot_gui/scripts/clean.sh"
 
 script_wp_set_start: "None"
 script_wp_set_stop: "None"
+
+
+# others
+mowbot_legacy_data_path: "/mowbot_legacy_data"

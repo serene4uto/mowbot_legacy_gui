@@ -1,3 +1,7 @@
+import os
+import yaml
+import numpy as np
+from datetime import datetime
 from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
@@ -10,6 +14,8 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QGroupBox,
     QComboBox,
+    QFileDialog,
+    QDialog,
 )
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from scipy.spatial.transform import Rotation as R
@@ -69,8 +75,8 @@ class WaypointsSetOptionBar(QWidget):
         log_rm_layout.addWidget(self.log_btn)
         log_rm_layout.addWidget(self.rm_btn)
         layout.addLayout(log_rm_layout)
-        
         layout.setSpacing(10)
+        
         layout.addStretch(1)
         layout.addWidget(self.save_btn)
         self.setLayout(layout)
@@ -83,6 +89,7 @@ class WaypointsSetOptionBar(QWidget):
         self.table_view.setItem(row_position, 0, QTableWidgetItem(data['latitude']))
         self.table_view.setItem(row_position, 1, QTableWidgetItem(data['longitude']))
         self.table_view.setItem(row_position, 2, QTableWidgetItem(data['heading']))
+        
 
 class WaypointsSetDisplay(QWidget):
     def __init__(self, config):
@@ -95,6 +102,9 @@ class WaypointsSetDisplay(QWidget):
         
         self.option_bar = WaypointsSetOptionBar(config=self._config)
         self.map_view = MapViewWidget()
+
+        self.gps_info_display = QLabel()
+        self.hdg_info_display = QLabel()
         
         self._init_ui()
         self._init_signals()
@@ -107,15 +117,76 @@ class WaypointsSetDisplay(QWidget):
         layout.setSpacing(10)
         # add map view
         layout.addWidget(self.map_view)
-        self.setLayout(layout)   
+        layout.setSpacing(10)
+          
+        # add info display
+        info_layout = QHBoxLayout()
+        info_layout.addWidget(self.gps_info_display)
+        info_layout.setSpacing(10)
+        info_layout.addWidget(self.hdg_info_display)
+        info_layout.setSpacing(10)
+        info_layout.addStretch(1)
+        layout.addLayout(info_layout)
+        
+        self.setLayout(layout) 
         
         
     def _init_signals(self):
         # self.option_bar.start_btn.clicked.connect(self.on_start_button_clicked)
         self.option_bar.log_btn.clicked.connect(self.on_optbar_wp_log_button_clicked)
-        # self.option_bar.save_btn.clicked.connect(self.on_save_button_clicked)
+        self.option_bar.save_btn.clicked.connect(self.on_optbar_wp_save_button_clicked)
         self.option_bar.rm_btn.clicked.connect(self.on_optbar_wp_remove_button_clicked)
         
+        
+    def on_optbar_wp_save_button_clicked(self):
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        default_filename = f"waypoints_{current_time}.yaml"
+        default_path = self._config['mowbot_legacy_data_path'] + '/waypoints'
+        # Check if the default path exists, if not create it
+        if not os.path.exists(default_path):
+            os.makedirs(default_path)
+        
+        # Open file dialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Waypoints",
+            os.path.join(default_path, default_filename),
+            "yaml Files (*.yaml);;All Files (*)",
+        )
+
+        if not file_path:
+            return  # User canceled
+        
+        try:
+            # Prepare data to save
+            waypoints = []
+            for row in range(self.option_bar.table_view.rowCount()):
+                lat_item = self.option_bar.table_view.item(row, 0)
+                lon_item = self.option_bar.table_view.item(row, 1)
+                hdg_item = self.option_bar.table_view.item(row, 2)
+
+                if lat_item and lon_item and hdg_item:
+                    
+                    waypoint = {
+                        'latitude': float(lat_item.text()),
+                        'longitude': float(lon_item.text()),
+                        'yaw': float(hdg_item.text())  # Using 'yaw' instead of 'heading'
+                    }
+                    waypoints.append(waypoint)
+            # Format the YAML data according to specified structure
+            waypoints_data = {
+                'waypoints': waypoints
+            }
+            
+            # Save to YAML file
+            with open(file_path, 'w') as file:
+                yaml.dump(waypoints_data, file, default_flow_style=False)
+                
+            logger.info(f"Waypoints saved to {file_path}") 
+            
+        except Exception as e:
+            logger.error(f"Failed to save waypoints: {str(e)}")
+
         
     def on_optbar_wp_log_button_clicked(self):
         self.map_view.add_gps_position_mark(
@@ -138,20 +209,21 @@ class WaypointsSetDisplay(QWidget):
                 # First, retrieve the data from the selected row.
                 lat_item = self.option_bar.table_view.item(selected_row, 0)
                 lon_item = self.option_bar.table_view.item(selected_row, 1)
-                
+
                 # Check if the items exist to avoid further attribute errors.
                 if lat_item is not None and lon_item is not None:
                     rm_lat = lat_item.text()
                     rm_lon = lon_item.text()
-    
+
                     # Remove the corresponding mark from the map using retrieved values.
                     self.map_view.remove_gps_position_mark(
                         latitude=float(rm_lat),
                         longitude=float(rm_lon)
                     )
-    
+                
                 # Now remove the row from the table.
                 self.option_bar.table_view.removeRow(selected_row)
+                
                 
         
 
@@ -163,6 +235,11 @@ class WaypointsSetDisplay(QWidget):
         self.map_view.update_gps_position(
             latitude=data['latitude'],
             longitude=data['longitude'],
+        )
+        
+        # Update the info display with the latest GPS position.
+        self.gps_info_display.setText(
+            f"lat: {data['latitude']:.6f}, lon: {data['longitude']:.6f}"
         )
         
     
@@ -179,9 +256,15 @@ class WaypointsSetDisplay(QWidget):
         # Conversion: yaw_ned = (90 - yaw_enu) mod 360.
         yaw_ned = (90 - yaw_enu) % 360
         # logger.info(f"GPS Heading signal received: ENU yaw = {yaw_enu:.2f}°, NED yaw = {yaw_ned:.2f}°")
-        self._last_heading = yaw_ned
         self.map_view.update_heading(
             heading=yaw_ned,
+        )
+        # for _last_heading, using ENU yaw in radians
+        self._last_heading = np.deg2rad(yaw_enu)
+        
+        # Update the info display with the latest heading.
+        self.hdg_info_display.setText(
+            f"heading: {self._last_heading:.4f} rad"
         )
 
 
