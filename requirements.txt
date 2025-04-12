@@ -6,5 +6,7 @@ websockets
 pydantic
 pyyaml
 folium
+numpy
+scipy
 
 # foxglove-websocket

@@ -1,62 +1,56 @@
 import json
-
 from PyQt5.QtWidgets import (
     QWidget, 
-    QVBoxLayout, 
-    QLabel
+    QVBoxLayout
 )
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
+from app.utils.logger import logger
 
-class GPSBridge(QObject):
-    """Bridge between Python and JavaScript for GPS updates"""
-    positionChanged = pyqtSignal(str)
+
+class JsPyBridge(QObject):
+    """Bridge between Python and JavaScript"""
+    signal_tracker_gps_updated = pyqtSignal(str)
+    signal_tracker_heading_updated = pyqtSignal(str)
+    signal_marks_gps_added = pyqtSignal(str)
+    signal_marks_gps_removed = pyqtSignal(str)
     
     @pyqtSlot(str)
     def receive_from_js(self, message):
-        print(f"Message from JS: {message}")
+        """Receive message from JavaScript"""
+        logger.debug(f"Received from JS: {message}")
+        
 
-class MapView(QWidget):
-    def __init__(self, parent=None):
+class MapViewWidget(QWidget):
+    """Map view widget using Leaflet with Bing satellite imagery and OSM fallback"""
+    
+    def __init__(
+            self, 
+            parent=None
+        ):
+        """Initialize the map view widget"""
         super().__init__(parent)  
-        
         # Setup UI
-        self.init_ui()
-        
+        self._init_ui()
         # Create a bridge for Python-JavaScript communication
-        self.bridge = GPSBridge()
-        
+        self.jspy_bridge = JsPyBridge()
         # Setup web channel
         self.channel = QWebChannel()
-        self.channel.registerObject("bridge", self.bridge)
+        self.channel.registerObject("jspy_bridge", self.jspy_bridge)
         self.web_view.page().setWebChannel(self.channel)
-
         # Load the HTML with Leaflet map, Bing layer, waypoints,
-        # and a tracking marker that rotates based on heading.
-        self.load_map()
+        self._load_map()
+        
     
-    
-    def init_ui(self):
+    def _init_ui(self):
         layout = QVBoxLayout()
-        
-        # Web view for the map
         self.web_view = QWebEngineView()
-        
         layout.addWidget(self.web_view, stretch=8)
-        
         self.setLayout(layout)
         
     
-    def update_position(self):
-        """Get current position and send to JavaScript"""
-        position = self.gps.get_position()
-        self.lat_label.setText(f"Latitude: {position['latitude']:.6f}")
-        self.lon_label.setText(f"Longitude: {position['longitude']:.6f}")
-        self.speed_label.setText(f"Speed: {position['speed']:.1f} km/h")
-        self.bridge.positionChanged.emit(json.dumps(position))
-    
-    def load_map(self):
+    def _load_map(self):
         """Load the Leaflet map HTML with Bing satellite imagery and a fallback to OSM.
            Waypoints are drawn as blue circle markers, and the tracking marker uses a red arrow icon
            that rotates according to the heading."""
@@ -69,7 +63,7 @@ class MapView(QWidget):
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
             <!-- Include Leaflet, RotatedMarker plugin (from unpkg), and Qt WebChannel -->
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-            <script src="https://unpkg.com/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
+            <script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
             <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
             <style>
                 html, body, #map {
@@ -84,7 +78,7 @@ class MapView(QWidget):
             <div id="map"></div>
             <script>
                 // Initialize the map centered at the first waypoint
-                var map = L.map('map').setView([37.7749, -122.4194], 15);
+                var map = L.map('map').setView([37.7749, -122.4194], 19); // max zoom
                 
                 // Define the tracking marker icon (red arrow)
                 var trackingIcon = L.icon({
@@ -96,22 +90,15 @@ class MapView(QWidget):
                     shadowSize: [41, 41]
                 });
                 
-                // Define waypoints (blue circle markers) array
-                var waypoints = [
-                    [37.7749, -122.4194],
-                    [37.7759, -122.4184],
-                    [37.7769, -122.4174],
-                    [37.7779, -122.4164]
-                ];
-                // Add blue circle markers for each waypoint with a popup label
-                for (var i = 0; i < waypoints.length; i++) {
-                    L.circleMarker(waypoints[i], {radius: 6, color: 'blue', fillColor: 'blue', fillOpacity: 1})
-                        .addTo(map)
-                        .bindPopup("Waypoint " + (i+1));
-                }
-                // Connect waypoints with a dashed polyline
-                L.polyline(waypoints, {color: 'blue', weight: 2, dashArray: '5, 5'}).addTo(map);
-                
+                // var trackingIcon = L.icon({
+                //     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                //     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                //     iconSize: [13, 21],
+                //     iconAnchor: [6, 21],
+                //     popupAnchor: [1, -17],
+                //     shadowSize: [21, 21]
+                // });
+
                 // Define a custom Bing Maps layer class with quadkey replacement support
                 L.BingLayer = L.TileLayer.extend({
                     options: {
@@ -265,38 +252,98 @@ class MapView(QWidget):
                 
                 // Create the tracking marker using the custom red icon and enable rotation.
                 // Note: With the rotated marker plugin loaded, the marker now has setRotationAngle().
-                var marker = L.marker([37.7749, -122.4194], { icon: trackingIcon, rotationAngle: 0 }).addTo(map);
+                var trackMarker = L.marker([37.7749, -122.4194], { 
+                    icon: trackingIcon, rotationAngle: 0 
+                }).addTo(map);
                 
                 // Track line for dynamic updates
                 var trackLine = L.polyline([], {color: 'red', weight: 3, opacity: 0.7}).addTo(map);
                 var trackPoints = [];
                 
+                // Create a layer group to hold markers.
+                var markerGroup = L.layerGroup().addTo(map);
+
                 // Connect to Qt WebChannel
                 new QWebChannel(qt.webChannelTransport, function(channel) {
-                    var bridge = channel.objects.bridge;
+                    var jspy_bridge = channel.objects.jspy_bridge;
                     
                     // Listen for position updates from Python
-                    bridge.positionChanged.connect(function(positionJson) {
+                    jspy_bridge.signal_tracker_gps_updated.connect(function(positionJson) {
                         var position = JSON.parse(positionJson);
-                        marker.setLatLng([position.latitude, position.longitude]);
-                        marker.setRotationAngle(position.heading);
-                        if (position.tracking) {
-                            trackPoints.push([position.latitude, position.longitude]);
-                            trackLine.setLatLngs(trackPoints);
-                            map.panTo([position.latitude, position.longitude]);
-                        }
+                        trackMarker.setLatLng([position.latitude, position.longitude]);
+
+                        // trackPoints.push([position.latitude, position.longitude]);
+                        // trackLine.setLatLngs(trackPoints);
+                        map.panTo([position.latitude, position.longitude]);
+                        
                         // Send an acknowledgment back to Python
-                        bridge.receive_from_js("Position updated");
+                        // jspy_bridge.receive_from_js("Position updated");
+                    });
+                    
+                    // Listen for heading updates from Python
+                    jspy_bridge.signal_tracker_heading_updated.connect(function(headingJson) {
+                        var heading = JSON.parse(headingJson);
+                        trackMarker.setRotationAngle(heading.heading);
+                    });
+                    
+                    // Listen for GPS mark addition request from Python
+                    jspy_bridge.signal_marks_gps_added.connect(function(positionJson) {
+                        var position = JSON.parse(positionJson);
+                        var markerPoints = L.marker([position.latitude, position.longitude], {
+                            radius: 5,              // Radius in pixels 
+                            color: 'red',           // Stroke color of the circle
+                            fillColor: 'red',       // Fill color
+                            fillOpacity: 1          // Fully opaque
+                        });
+                        markersGroup.addLayer(markerPoints);
                     });
                     
                     // Function to clear track (called from Python)
-                    window.clearTrack = function() {
-                        trackPoints = [];
-                        trackLine.setLatLngs([]);
-                    };
+                    // window.clearTrack = function() {
+                    //     trackPoints = [];
+                    //     trackLine.setLatLngs([]);
+                    // };
                 });
             </script>
         </body>
         </html>
         """
         self.web_view.setHtml(html)
+        
+
+    def update_gps_position(self, latitude, longitude):
+        """Update the GPS position and send it to the JavaScript side"""
+        self.jspy_bridge.signal_tracker_gps_updated.emit(json.dumps({
+            'latitude': latitude,
+            'longitude': longitude,
+        }))
+        
+    
+    def update_heading(self, heading):
+        """Update the heading and send it to the JavaScript side"""
+        self.jspy_bridge.signal_tracker_heading_updated.emit(json.dumps({
+            'heading': heading,
+        }))
+        
+        
+    def add_gps_position_mark(self, latitude, longitude):
+        """Request to add a GPS position mark"""
+        self.jspy_bridge.signal_marks_gps_added.emit(json.dumps({
+            'latitude': latitude,
+            'longitude': longitude,
+        }))
+        logger.debug("Request to add GPS position mark sent")
+        
+        
+    def clear_gps_position_mark(self, latitude, longitude):
+        """Request to clear the GPS position mark"""
+        self.jspy_bridge.signal_marks_gps_removed.emit(json.dumps({
+            'latitude': latitude,
+            'longitude': longitude,
+        }))
+        logger.debug("Request to clear GPS position mark sent")
+        
+        
+        
+        
+    

@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QGroupBox,
 )
-
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 class MenuBox(QWidget):
@@ -57,19 +56,20 @@ class MenuBox(QWidget):
         self.util_btn.clicked.connect(self.on_util_btn_clicked)
         self.set_wp_task_btn.clicked.connect(self.on_set_wp_task_btn_clicked)
         self.follow_wp_task_btn.clicked.connect(self.on_follow_wp_task_btn_clicked)
+        
      
-    
     def on_settings_btn_clicked(self):
         self.settings_btn_clicked_signal.emit()
+        
 
     def on_util_btn_clicked(self):
         self.util_btn_clicked_signal.emit()
-
         
+
     def on_set_wp_task_btn_clicked(self):
         self.set_wp_task_btn_clicked_signal.emit()
         
-    
+        
     def on_follow_wp_task_btn_clicked(self):
         self.follow_wp_task_btn_clicked_signal.emit()
         

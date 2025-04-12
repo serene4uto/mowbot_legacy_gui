@@ -240,7 +240,6 @@ class FoxgloveWsHandler(QObject):
             if opcode != 0x01:
                 logger.warning(f"Unexpected opcode: {opcode}")
                 return
-            
 
             # logger.info(f"Streaming message received:")
             # logger.info(f"  Subscription ID: {subscription_id}")

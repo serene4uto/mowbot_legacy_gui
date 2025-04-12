@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import QProcess
 
 
-class ProcessButton(QPushButton):
+class ProcessButtonWidget(QPushButton):
     def __init__(self, start_script=None, stop_script=None):
         super().__init__()
         
