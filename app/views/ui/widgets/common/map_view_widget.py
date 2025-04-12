@@ -261,7 +261,7 @@ class MapViewWidget(QWidget):
                 var trackPoints = [];
                 
                 // Create a layer group to hold markers.
-                var markerGroup = L.layerGroup().addTo(map);
+                var markersGroup = L.layerGroup().addTo(map);
 
                 // Connect to Qt WebChannel
                 new QWebChannel(qt.webChannelTransport, function(channel) {
@@ -289,14 +289,31 @@ class MapViewWidget(QWidget):
                     // Listen for GPS mark addition request from Python
                     jspy_bridge.signal_marks_gps_added.connect(function(positionJson) {
                         var position = JSON.parse(positionJson);
-                        var markerPoints = L.marker([position.latitude, position.longitude], {
-                            radius: 5,              // Radius in pixels 
+                        var markerPoint = L.circleMarker([position.latitude, position.longitude], {
+                            radius: 0.25,              // Radius in pixels 
                             color: 'red',           // Stroke color of the circle
                             fillColor: 'red',       // Fill color
                             fillOpacity: 1          // Fully opaque
                         });
-                        markersGroup.addLayer(markerPoints);
+                        markersGroup.addLayer(markerPoint);
                     });
+                    
+                    // Listen for GPS mark removal request from Python
+                    jspy_bridge.signal_marks_gps_removed.connect(function(positionJson) {
+                        var position = JSON.parse(positionJson);
+                        
+                        // find the marker with the same position and remove it
+                        markersGroup.eachLayer(function(layer) {
+                            if (layer.getLatLng().lat === position.latitude && layer.getLatLng().lng === position.longitude) {
+                                markersGroup.removeLayer(layer);
+                            }
+                        });
+                    });
+                    
+                    // Function to clear all markers (called from Python)
+                    window.clearMarkers = function() {
+                        markersGroup.clearLayers();
+                    };
                     
                     // Function to clear track (called from Python)
                     // window.clearTrack = function() {
@@ -335,7 +352,7 @@ class MapViewWidget(QWidget):
         logger.debug("Request to add GPS position mark sent")
         
         
-    def clear_gps_position_mark(self, latitude, longitude):
+    def remove_gps_position_mark(self, latitude, longitude):
         """Request to clear the GPS position mark"""
         self.jspy_bridge.signal_marks_gps_removed.emit(json.dumps({
             'latitude': latitude,

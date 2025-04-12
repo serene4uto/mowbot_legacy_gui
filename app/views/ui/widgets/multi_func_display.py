@@ -42,7 +42,6 @@ class MultiFuncDisplay(QWidget):
         self.setLayout(layout)
         
     
-    
     @pyqtSlot()
     def on_set_wp_task_btn_clicked(self):
         self.staked_widget.setCurrentIndex(0)
