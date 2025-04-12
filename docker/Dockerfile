@@ -17,8 +17,10 @@ RUN apt-get update && apt-get install -y \
         python3-pip \
         # python3-pyqt5 \
         qtwebengine5-dev \
-        qtwebengine5-dev-tools
-        # python3-pyqt5.qtwebengine
+        qtwebengine5-dev-tools \
+        # python3-pyqt5.qtwebengine \
+        docker.io 
+
 
 # Set PyQt license acceptance for noninteractive builds
 ENV PYQT_GPL_ACCEPT=yes

@@ -1,7 +1,5 @@
 export DISPLAY=:0
-xhost +local:docker
-docker start mowbot_humble
-#docker exec -it -e DISPLAY=:0.0 -w /workspaces/mowbot/mowbot_ws mowbot_humble /bin/bash -c "\
+
 docker exec -e DISPLAY=:0.0 -w /workspaces/mowbot/mowbot_ws mowbot_humble /bin/bash -c "\
         cd /workspaces/mowbot/mowbot_ws \
         && . ./install/setup.bash \

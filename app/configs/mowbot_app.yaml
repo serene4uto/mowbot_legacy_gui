@@ -5,14 +5,14 @@
 foxglove_ws_uri: ws://localhost:8765
 foxglove_ws_subprotocol: foxglove.websocket.v1
 
+# scripts
+script_bringup_start: ""
+script_bringup_stop: ""
 
-script_bringup_start: "/home/farmbot/mowbot_project/mowbot_gui/scripts/bringup_start.bash"
-script_bringup_stop: "/home/farmbot/mowbot_project/mowbot_gui/scripts/bringup_stop.bash"
+script_clean: ""
 
-cleaning_script: "/home/farmbot/mowbot_project/mowbot_gui/scripts/clean.sh"
-
-script_wp_set_start: "None"
-script_wp_set_stop: "None"
+script_wp_set_start: "/workspaces/mowbot_legacy_gui/scripts/wp_set_start.bash"
+script_wp_set_stop: "/workspaces/mowbot_legacy_gui/scripts/wp_set_stop.bash"
 
 
 # others

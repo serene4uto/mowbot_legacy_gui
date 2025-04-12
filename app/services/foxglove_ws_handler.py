@@ -253,7 +253,7 @@ class FoxgloveWsHandler(QObject):
                 self.heading_quat_signal.emit(heading_quat)
                 # logger.info(f"  IMU Data: {imu_data}")
             
-            if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/fix':
+            if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/fix_filtered':
                 navsatfix_data = decode_navsatfix(payload)
                 gps_fix = {
                     'latitude': navsatfix_data.get('latitude', 0),

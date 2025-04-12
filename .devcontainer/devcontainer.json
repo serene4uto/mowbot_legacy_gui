@@ -9,9 +9,11 @@
     "-v", "/dev:/dev",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
     "-v", "/home/mowbot/mowbot_legacy_data:/mowbot_legacy_data",
-    "-e", "DISPLAY"
+    "-v", "/var/run/docker.sock:/var/run/docker.sock",
+    "-e", "DISPLAY",
+    "-e", "HOST_HOME=${localEnv:HOME}"
   ],
-  "postCreateCommand": "pip install --upgrade pip && pip install pylint autopep8",
+  "postCreateCommand": "bash -c 'apt-get update && apt-get install -y docker.io && pip install --upgrade pip && pip install pylint autopep8 && pip install -r requirements.txt'",
   "customizations": {
     "vscode": {
       "extensions": [

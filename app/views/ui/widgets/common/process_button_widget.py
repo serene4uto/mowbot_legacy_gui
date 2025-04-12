@@ -1,6 +1,8 @@
 
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import QProcess
+# logger
+from app.utils.logger import logger
 
 
 class ProcessButtonWidget(QPushButton):

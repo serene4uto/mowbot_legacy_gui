@@ -361,6 +361,13 @@ class MapViewWidget(QWidget):
         logger.debug("Request to clear GPS position mark sent")
         
         
+    def reset(self):
+        """Reset the map view"""
+        # Clear all markers
+        self.web_view.page().runJavaScript("clearMarkers();")
+        logger.debug("Map view reset")
+        
+        
         
         
     

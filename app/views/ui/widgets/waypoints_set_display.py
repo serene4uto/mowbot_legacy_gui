@@ -34,6 +34,12 @@ class WaypointsSetOptionBar(QWidget):
         self.start_btn.setText('Start')
         self.start_btn.setFixedWidth(80)
         self.start_btn.setFixedHeight(80)
+        self.start_btn.setStyleSheet(
+            "font-size: 20px; font-weight: bold; color: green")
+        
+        logger.info(f"WaypointsSetOptionBar: start script: {self.start_btn.start_script}")
+        logger.info(f"WaypointsSetOptionBar: stop script: {self.start_btn.stop_script}")
+        
 
         self.table_view = QTableWidget(0, 3)
         self.table_view.setHorizontalHeaderLabels(['Lat', 'Lon', 'Hdg'])
@@ -90,6 +96,11 @@ class WaypointsSetOptionBar(QWidget):
         self.table_view.setItem(row_position, 1, QTableWidgetItem(data['longitude']))
         self.table_view.setItem(row_position, 2, QTableWidgetItem(data['heading']))
         
+    def clear_table(self):
+        self.table_view.setRowCount(0)
+        self.table_view.clearContents()
+        self.table_view.setHorizontalHeaderLabels(['Lat', 'Lon', 'Hdg'])
+        
 
 class WaypointsSetDisplay(QWidget):
     def __init__(self, config):
@@ -99,6 +110,8 @@ class WaypointsSetDisplay(QWidget):
         self._last_gps_lat: float = 0.0
         self._last_gps_lon: float = 0.0
         self._last_heading: float = 0.0
+        
+        self._wp_set_started = False
         
         self.option_bar = WaypointsSetOptionBar(config=self._config)
         self.map_view = MapViewWidget()
@@ -132,10 +145,10 @@ class WaypointsSetDisplay(QWidget):
         
         
     def _init_signals(self):
-        # self.option_bar.start_btn.clicked.connect(self.on_start_button_clicked)
         self.option_bar.log_btn.clicked.connect(self.on_optbar_wp_log_button_clicked)
         self.option_bar.save_btn.clicked.connect(self.on_optbar_wp_save_button_clicked)
         self.option_bar.rm_btn.clicked.connect(self.on_optbar_wp_remove_button_clicked)
+        self.option_bar.start_btn.clicked.connect(self.on_start_button_clicked)
         
         
     def on_optbar_wp_save_button_clicked(self):
@@ -186,6 +199,22 @@ class WaypointsSetDisplay(QWidget):
             
         except Exception as e:
             logger.error(f"Failed to save waypoints: {str(e)}")
+            
+            
+    def on_start_button_clicked(self):
+        self._wp_set_started = not self._wp_set_started
+        if self._wp_set_started:
+            self.option_bar.start_btn.setText('Stop')
+            self.option_bar.start_btn.setStyleSheet("font-size: 20px; font-weight: bold; color: red")
+            self.option_bar.start_btn.start_process()
+        else:
+            self.option_bar.start_btn.setText('Start')
+            self.option_bar.start_btn.setStyleSheet("font-size: 20px; font-weight: bold; color: green")
+            self.option_bar.start_btn.stop_process()
+            # Reset the map view
+            self.map_view.reset()
+            self.option_bar.clear_table()
+        
 
         
     def on_optbar_wp_log_button_clicked(self):
@@ -225,8 +254,6 @@ class WaypointsSetDisplay(QWidget):
                 self.option_bar.table_view.removeRow(selected_row)
                 
                 
-        
-
     @pyqtSlot(dict)
     def on_gps_fix_signal_received(self, data: dict):
         # logger.info(f" GPS Fix signal received: {data}")
