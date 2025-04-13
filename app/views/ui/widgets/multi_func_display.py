@@ -21,7 +21,7 @@ class MultiFuncDisplay(QWidget):
         
         self.staked_widget = QStackedWidget()
         self.wp_set_display = WaypointsSetDisplay(config=self._config)
-        self.wp_follow_display = WaypointsFollowDisplay()
+        self.wp_follow_display = WaypointsFollowDisplay(config=self._config)
         self.settings_display = SettingsDisplay()
         self.util_display = UtilDisplay()
         

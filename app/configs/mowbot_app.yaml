@@ -14,6 +14,8 @@ script_clean: ""
 script_wp_set_start: "/workspaces/mowbot_legacy_gui/scripts/wp_set_start.bash"
 script_wp_set_stop: "/workspaces/mowbot_legacy_gui/scripts/wp_set_stop.bash"
 
+script_wp_follow_start: "/workspaces/mowbot_legacy_gui/scripts/wp_follow_start.bash"
+script_wp_follow_stop: "/workspaces/mowbot_legacy_gui/scripts/wp_follow_stop.bash"
 
 # others
 mowbot_legacy_data_path: "/mowbot_legacy_data"

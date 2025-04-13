@@ -76,12 +76,21 @@ class UIWidget(QWidget):
         self.foxglove_ws_handler.sensor_status_signal.connect(
             self.status_bar.on_status_signal_received
         )
+        ## wp_set_display
         self.foxglove_ws_handler.gps_fix_signal.connect(
             self.mfunc_display.wp_set_display.on_gps_fix_signal_received
         )
         self.foxglove_ws_handler.heading_quat_signal.connect(
             self.mfunc_display.wp_set_display.on_heading_quat_signal_received
         )
+        ## wp_follow_display
+        self.foxglove_ws_handler.gps_fix_signal.connect(
+            self.mfunc_display.wp_follow_display.on_gps_fix_signal_received
+        )
+        self.foxglove_ws_handler.heading_quat_signal.connect(
+            self.mfunc_display.wp_follow_display.on_heading_quat_signal_received
+        )
+        
 
 
     def on_bringup_btn_clicked(self):
