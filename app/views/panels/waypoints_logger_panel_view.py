@@ -25,8 +25,6 @@ from app.utils.logger import logger
 class WaypointsLoggerOptionBarView(QWidget):
     """
     A view component for the option bar in the waypoint logging panel.
-    It provides the table for displaying logged waypoints and buttons for logging,
-    removing, and saving waypoint entries.
     """
     def __init__(self, config):
         super().__init__()
@@ -36,7 +34,7 @@ class WaypointsLoggerOptionBarView(QWidget):
         self.table_view = QTableWidget(0, 3)
         self.table_view.setHorizontalHeaderLabels(['Lat', 'Lon', 'Hdg'])
         self.table_view.setFixedWidth(200)
-        self.table_view.setFixedHeight(80)
+        # self.table_view.setFixedHeight(80)
         font = self.table_view.font()
         font.setPointSize(8)
         self.table_view.setFont(font)
@@ -48,34 +46,36 @@ class WaypointsLoggerOptionBarView(QWidget):
         
         # Create buttons.
         self.log_btn = QPushButton('Log')
-        self.log_btn.setFixedWidth(60)
-        self.log_btn.setFixedHeight(40)
+        self.log_btn.setFixedWidth(80)
+        self.log_btn.setFixedHeight(80)
         
         self.rm_btn = QPushButton('Remove')
-        self.rm_btn.setFixedWidth(60)
-        self.rm_btn.setFixedHeight(40)
+        self.rm_btn.setFixedWidth(80)
+        self.rm_btn.setFixedHeight(80)
 
         self.save_btn = QPushButton('Save')
-        self.save_btn.setFixedWidth(100)
+        self.save_btn.setFixedWidth(80)
         self.save_btn.setFixedHeight(80)
         
         self._init_ui()
 
     def _init_ui(self):
         layout = QHBoxLayout()
+        
+        btn_layout = QVBoxLayout()
+        btn_layout.addWidget(self.log_btn)
+        btn_layout.setSpacing(10)
+        btn_layout.addWidget(self.rm_btn)    
+        btn_layout.setSpacing(10)
+        
+        btn_layout.addStretch(1)
+        btn_layout.addWidget(self.save_btn)
+        
+        layout.addLayout(btn_layout)
+        layout.setSpacing(10)
         layout.addWidget(self.table_view)
         layout.setSpacing(10)
-        
-        log_rm_layout = QVBoxLayout()
-        log_rm_layout.addWidget(self.log_btn)
-        log_rm_layout.addWidget(self.rm_btn)
-        layout.addLayout(log_rm_layout)
-        layout.setSpacing(10)
-        
-        layout.addStretch(1)
-        layout.addWidget(self.save_btn)
         self.setLayout(layout)
-        self.setFixedHeight(100)
         
     def add_row_to_table(self, data: dict):
         """
@@ -113,7 +113,9 @@ class WaypointsLoggerPanelView(QWidget):
         self._wp_log_started = False
         
         # Create subcomponents.
-        self.option_bar = WaypointsLoggerOptionBarView(config=self._config)
+        self.option_bar = WaypointsLoggerOptionBarView(
+            config=self._config
+        )
         self.map_view = MapView(
             config=self._config
         )
@@ -123,11 +125,12 @@ class WaypointsLoggerPanelView(QWidget):
         self._init_ui()
 
     def _init_ui(self):
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
         layout.addWidget(self.option_bar)
         layout.setSpacing(10)
-        layout.addWidget(self.map_view)
-        layout.setSpacing(10)
+        map_layout = QVBoxLayout()
+        map_layout.addWidget(self.map_view)
+        map_layout.setSpacing(10)
           
         # Create an information display area.
         info_layout = QHBoxLayout()
@@ -136,8 +139,9 @@ class WaypointsLoggerPanelView(QWidget):
         info_layout.addWidget(self.hdg_info_display)
         info_layout.setSpacing(10)
         info_layout.addStretch(1)
-        layout.addLayout(info_layout)
+        map_layout.addLayout(info_layout)
         
+        layout.addLayout(map_layout)
         self.setLayout(layout) 
         
         

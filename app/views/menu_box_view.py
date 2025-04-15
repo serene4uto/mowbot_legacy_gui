@@ -5,8 +5,10 @@ from PyQt5.QtWidgets import (
     QPushButton, 
     QGroupBox
 )
+from PyQt5.QtCore import pyqtSignal
 
 class MenuBoxView(QWidget):
+    
     def __init__(self):
         super().__init__()
         
@@ -20,7 +22,6 @@ class MenuBoxView(QWidget):
         self.navigator_btn = QPushButton('Waypoint Navigator')
         self.navigator_btn.setFixedHeight(50)
         
-        # Build the UI layout
         self._init_ui()
         
         # Optionally, highlight the default button (e.g., Waypoint Logger).
@@ -51,6 +52,7 @@ class MenuBoxView(QWidget):
         layout.addWidget(menu_grb)
         
         self.setLayout(layout)
+        self.setFixedWidth(250)
     
     def reset_btns(self):
         """Resets all buttons to default style and enables them."""
@@ -75,3 +77,4 @@ class MenuBoxView(QWidget):
             self.logger_btn.setStyleSheet(style)
         elif button_name == "navigator":
             self.navigator_btn.setStyleSheet(style)
+        

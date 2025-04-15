@@ -25,6 +25,9 @@ class MainController(QObject):
         
         self._main_view = main_view
         self._main_model = main_model
+        
+        
+        # self._main_view.
 
         
         

@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import (
 )
 from .panels import (
     SettingsPanelView,
-    WaypointsLoggerPanelView
+    WaypointsLoggerPanelView,
+    WaypointsNavigatorPanelView
 )
 
 class MultiPanelView(QWidget):
@@ -18,13 +19,16 @@ class MultiPanelView(QWidget):
         self.stacked_widget = QStackedWidget()
         
         self.waypoints_logger_panel = WaypointsLoggerPanelView( 
-            config=self._config)      
-        # self.waypoints_navigator_panel = WaypointsNavigatorPanelView(config=self._config)  
+            config=self._config
+        )      
+        self.waypoints_navigator_panel = WaypointsNavigatorPanelView(
+            config=self._config
+        )  
         self.settings_panel = SettingsPanelView()                                
 
         # Add panels to the stacked widget.
         self.stacked_widget.addWidget(self.waypoints_logger_panel)
-        # self.stacked_widget.addWidget(self.waypoints_navigator_panel)
+        self.stacked_widget.addWidget(self.waypoints_navigator_panel)
         self.stacked_widget.addWidget(self.settings_panel)
 
         self._init_ui()
