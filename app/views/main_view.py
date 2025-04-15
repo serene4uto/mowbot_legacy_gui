@@ -40,11 +40,18 @@ class MainView(QWidget):
             "font-size: 16px; font-weight: bold; color: green")
         self.bringup_btn.setEnabled(True)
         
-        self.localize_btn = QPushButton("Start Localize")
+        self.localize_btn = QPushButton("Start Localization")
         self.localize_btn.setFixedHeight(80)
         self.localize_btn.setStyleSheet(
             "font-size: 16px; font-weight: bold; color: green")
         self.localize_btn.setEnabled(True)
+        
+        self.menu_box.setEnabled(False)
+        self.multi_panel.setEnabled(False)
+        self.status_bar.setEnabled(False)
+        self.localize_btn.setEnabled(False)
+        self.localize_btn.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: gray")
         
         self._init_ui()
         self._connect_button_events()
@@ -60,9 +67,9 @@ class MainView(QWidget):
         hleft_layout.addWidget(self.menu_box)
         hleft_layout.stretch(1)
         hleft_layout.addSpacing(10)
-        hleft_layout.addWidget(self.bringup_btn)
-        hleft_layout.addSpacing(10)
         hleft_layout.addWidget(self.localize_btn)
+        hleft_layout.addSpacing(10)
+        hleft_layout.addWidget(self.bringup_btn)
         hlayout.addLayout(hleft_layout)
         hlayout.addSpacing(10)
         hlayout.addWidget(self.multi_panel)
@@ -75,6 +82,10 @@ class MainView(QWidget):
         self.menu_box.settings_btn.clicked.connect(self.on_settings_btn_clicked)
         self.menu_box.logger_btn.clicked.connect(self.on_logger_btn_clicked)
         self.menu_box.navigator_btn.clicked.connect(self.on_navigator_btn_clicked)
+        self.bringup_btn.clicked.connect(self.on_bringup_btn_clicked)
+        self.localize_btn.clicked.connect(self.on_localize_btn_clicked)
+        self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.clicked.connect(
+            self.on_navigate_btn_clicked)
     
     def on_settings_btn_clicked(self):
         """Forward the settings button event from the menu and update the UI."""
@@ -159,12 +170,31 @@ class MainView(QWidget):
             self.bringup_btn.setEnabled(True)
             self.bringup_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: red")
+            
+            # Enable
+            self.localize_btn.setEnabled(True)
+            self.localize_btn.setStyleSheet(
+                "font-size: 16px; font-weight: bold; color: green")
+            self.localize_btn.setText("Start Localization")
+            self.menu_box.setEnabled(True)
+            self.multi_panel.setEnabled(True)
+            self.status_bar.setEnabled(True)
+            
         elif status == "stopped":
             self._is_bringup = False
             self.bringup_btn.setText("Start Bringup")
             self.bringup_btn.setEnabled(True)
             self.bringup_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: green")
+            
+            # Reset and disable
+            self.localize_btn.setEnabled(False)
+            self.localize_btn.setStyleSheet(
+                "font-size: 16px; font-weight: bold; color: gray")
+            self.localize_btn.setText("Start Localization")
+            self.menu_box.setEnabled(False)
+            self.multi_panel.setEnabled(False)
+            self.status_bar.setEnabled(False)
     
     @pyqtSlot(str)
     def on_signal_localize_progress_status(self, status: str):
@@ -175,13 +205,13 @@ class MainView(QWidget):
         """
         if status == "started":
             self._is_localizing = True
-            self.localize_btn.setText("Stop Localize")
+            self.localize_btn.setText("Stop Localization")
             self.localize_btn.setEnabled(True)
             self.localize_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: red")
         elif status == "stopped":
             self._is_localizing = False
-            self.localize_btn.setText("Start Localize")
+            self.localize_btn.setText("Start Localization")
             self.localize_btn.setEnabled(True)
             self.localize_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: green")
