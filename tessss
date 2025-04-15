@@ -1,0 +1,6 @@
+  File "/workspaces/mowbot_legacy_gui/app/views/ui/widgets/waypoints_set_display.py", line 254, in on_heading_quat_signal_received
+    euler = R.from_quat(quat).as_euler('xyz', degrees=True)
+  File "_rotation.pyx", line 999, in scipy.spatial.transform._rotation.Rotation.from_quat
+  File "_rotation.pyx", line 857, in scipy.spatial.transform._rotation.Rotation.__init__
+ValueError: Found zero norm quaternions in `quat`.
+Aborted (core dumped)

@@ -8,5 +8,6 @@ pyyaml
 folium
 numpy
 scipy
+docker
 
 # foxglove-websocket

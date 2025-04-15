@@ -6,16 +6,13 @@ foxglove_ws_uri: ws://localhost:8765
 foxglove_ws_subprotocol: foxglove.websocket.v1
 
 # scripts
-script_bringup_start: ""
-script_bringup_stop: ""
+script_bringup_start:   "" #"scripts/bringup_start.bash"
+script_bringup_stop:    "" #"scripts/bringup_stop.bash"
+script_localize_start:  "scripts/localize_start.bash"
+script_localize_stop:   "scripts/localize_stop.bash"
+script_wpfl_nav_start:  "scripts/wpfl_nav_start.sh"
+script_wpfl_nav_stop:   "scripts/wpfl_nav_stop.sh"
 
-script_clean: ""
-
-script_wp_set_start: "/workspaces/mowbot_legacy_gui/scripts/wp_set_start.bash"
-script_wp_set_stop: "/workspaces/mowbot_legacy_gui/scripts/wp_set_stop.bash"
-
-script_wp_follow_start: "/workspaces/mowbot_legacy_gui/scripts/wp_follow_start.bash"
-script_wp_follow_stop: "/workspaces/mowbot_legacy_gui/scripts/wp_follow_stop.bash"
 
 # others
 mowbot_legacy_data_path: "/mowbot_legacy_data"

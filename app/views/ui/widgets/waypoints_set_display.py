@@ -24,22 +24,14 @@ from app.views.ui.widgets.common.process_button_widget import ProcessButtonWidge
 from app.utils.logger import logger  
 
 class WaypointsSetOptionBar(QWidget):
-    def __init__(self, config):
+    def __init__(
+        self, 
+        parent,
+        config
+    ):
         super().__init__()
-
-        self.start_btn = ProcessButtonWidget(
-            start_script=config['script_wp_set_start'],
-            stop_script=config['script_wp_set_stop'],
-        )
-        self.start_btn.setText('Start')
-        self.start_btn.setFixedWidth(80)
-        self.start_btn.setFixedHeight(80)
-        self.start_btn.setStyleSheet(
-            "font-size: 20px; font-weight: bold; color: green")
         
-        logger.info(f"WaypointsSetOptionBar: start script: {self.start_btn.start_script}")
-        logger.info(f"WaypointsSetOptionBar: stop script: {self.start_btn.stop_script}")
-        
+        self._config = config
 
         self.table_view = QTableWidget(0, 3)
         self.table_view.setHorizontalHeaderLabels(['Lat', 'Lon', 'Hdg'])
@@ -72,8 +64,6 @@ class WaypointsSetOptionBar(QWidget):
         
     def _init_ui(self):
         layout = QHBoxLayout()
-        layout.addWidget(self.start_btn)
-        layout.setSpacing(10)
         layout.addWidget(self.table_view)
         layout.setSpacing(10)
         
@@ -96,6 +86,7 @@ class WaypointsSetOptionBar(QWidget):
         self.table_view.setItem(row_position, 1, QTableWidgetItem(data['longitude']))
         self.table_view.setItem(row_position, 2, QTableWidgetItem(data['heading']))
         
+        
     def clear_table(self):
         self.table_view.setRowCount(0)
         self.table_view.clearContents()
@@ -113,7 +104,10 @@ class WaypointsSetDisplay(QWidget):
         
         self._wp_set_started = False
         
-        self.option_bar = WaypointsSetOptionBar(config=self._config)
+        self.option_bar = WaypointsSetOptionBar(
+            parent=self,
+            config=self._config
+        )
         self.map_view = MapViewWidget()
 
         self.gps_info_display = QLabel()
@@ -148,7 +142,6 @@ class WaypointsSetDisplay(QWidget):
         self.option_bar.log_btn.clicked.connect(self.on_optbar_wp_log_button_clicked)
         self.option_bar.save_btn.clicked.connect(self.on_optbar_wp_save_button_clicked)
         self.option_bar.rm_btn.clicked.connect(self.on_optbar_wp_remove_button_clicked)
-        self.option_bar.start_btn.clicked.connect(self.on_start_button_clicked)
         
         
     def on_optbar_wp_save_button_clicked(self):
@@ -200,22 +193,6 @@ class WaypointsSetDisplay(QWidget):
         except Exception as e:
             logger.error(f"Failed to save waypoints: {str(e)}")
             
-            
-    def on_start_button_clicked(self):
-        self._wp_set_started = not self._wp_set_started
-        if self._wp_set_started:
-            self.option_bar.start_btn.setText('Stop')
-            self.option_bar.start_btn.setStyleSheet("font-size: 20px; font-weight: bold; color: red")
-            self.option_bar.start_btn.start_process()
-        else:
-            self.option_bar.start_btn.setText('Start')
-            self.option_bar.start_btn.setStyleSheet("font-size: 20px; font-weight: bold; color: green")
-            self.option_bar.start_btn.stop_process()
-            # Reset the map view
-            self.map_view.reset()
-            self.option_bar.clear_table()
-        
-
         
     def on_optbar_wp_log_button_clicked(self):
         self.map_view.add_gps_position_mark(
@@ -274,6 +251,13 @@ class WaypointsSetDisplay(QWidget):
     def on_heading_quat_signal_received(self, data: dict):
         # Turn quaternion to Euler angles (roll, pitch, yaw) in degrees using the "xyz" order.
         quat = [data['x'], data['y'], data['z'], data['w']]
+        # Check if the quaternion is valid (not all zeros or very close to zero)
+        
+        # quat_norm = sum(q*q for q in quat)**0.5
+        # if quat_norm < 1e-10:  # If norm is effectively zero
+        #     logger.warning(f"Received invalid quaternion with near-zero norm: {quat}")
+        #     return  # Skip processing this invalid quaternion
+        
         euler = R.from_quat(quat).as_euler('xyz', degrees=True)
         # Extract the ENU yaw (heading) from the Euler angles.
         yaw_enu = euler[2]

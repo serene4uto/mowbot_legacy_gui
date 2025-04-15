@@ -29,9 +29,6 @@ def decode_imu(data: bytes):
     padding_bytes = (8 - (total_string_size % 8)) % 8  # Calculate needed padding (0-7 bytes)
     offset += padding_bytes  # Move past the padding
     
-    if frame_id != 'gps_left_link':
-        # Skip the rest of the message if frame_id is not 'left_gps_link'
-        return None
 
     # 2) orientation (4 x float64)
     orientation = struct.unpack_from('<dddd', data, offset)
@@ -112,14 +109,7 @@ def decode_navsatfix(data: bytes):
     # Align to 4-byte boundary after string
     pad = (4 - (frame_id_len % 4)) % 4
     offset += pad
-    
-    if frame_id != 'gps_left_link' and frame_id != 'base_footprint':
-        # Skip the rest of the message if frame_id is not 'left_gps_link' or 'base_footprint'
-        print(f"frame_id: {frame_id} is not supported")
-        return None
 
-    # print(f"frame_id: {frame_id}")
-    
     # 3) NavSatStatus
     # status (int8)
     status_val, = struct.unpack_from('<b', data, offset)

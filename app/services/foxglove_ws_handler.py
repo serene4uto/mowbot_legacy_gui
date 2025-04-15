@@ -248,20 +248,38 @@ class FoxgloveWsHandler(QObject):
             # logger.info(f"  Payload (raw): {payload}")
 
             if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/heading':
+                # logger.info(f" Payload: {payload}")
                 imu_data = decode_imu(payload)
+                if imu_data is None:
+                    return
                 heading_quat = imu_data.get('orientation', {})
                 self.heading_quat_signal.emit(heading_quat)
                 # logger.info(f"  IMU Data: {imu_data}")
+                
+            if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/fix':
+                # logger.info(f" Payload: {payload}")
+                navsatfix_data = decode_navsatfix(payload)
+                if navsatfix_data is None:
+                    return
+                gps_fix = {
+                    'latitude': navsatfix_data.get('latitude', 0),
+                    'longitude': navsatfix_data.get('longitude', 0),
+                    'altitude': navsatfix_data.get('altitude', 0),
+                }
+                # logger.info(f"  Navsatfix Data: {navsatfix_data}")
             
             if self.ws_subs.get(subscription_id, {}).get('topic') == '/gps/fix_filtered':
+                # logger.info(f" Payload: {payload}")
                 navsatfix_data = decode_navsatfix(payload)
+                if navsatfix_data is None:
+                    return
                 gps_fix = {
                     'latitude': navsatfix_data.get('latitude', 0),
                     'longitude': navsatfix_data.get('longitude', 0),
                     'altitude': navsatfix_data.get('altitude', 0),
                 }
                 self.gps_fix_signal.emit(gps_fix)
-                # logger.info(f"  Navsatfix Data: {navsatfix_data}")
+                logger.info(f"  Navsatfix Data: {navsatfix_data}")
             
             if self.ws_subs.get(subscription_id, {}).get('topic') == '/sensor_status':
                 sensorstatus_data = decode_sensorstatus(payload)

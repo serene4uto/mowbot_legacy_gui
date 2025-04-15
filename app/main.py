@@ -25,7 +25,9 @@ def main():
         help="logger level",
     )
     default_config_file = os.path.join(
-        os.path.expanduser("~"), ".mowbotapprc"
+        os.path.dirname(os.path.abspath(__file__)),
+        "configs",
+        "mowbot_app.yaml",
     )
     parser.add_argument(
         "--config",

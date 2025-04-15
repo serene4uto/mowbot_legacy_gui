@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET_CONTAINER="mowbot_legacy_wp_set"
+TARGET_CONTAINER="gui_wp_follow_nav"
 
 # find if the target container is existing
 if [ "$(docker ps -aq -f name=$TARGET_CONTAINER)" ]; then

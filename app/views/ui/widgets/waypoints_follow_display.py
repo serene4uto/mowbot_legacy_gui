@@ -35,8 +35,8 @@ class WaypointsFollowOptBar(QWidget):
         self._parent = parent
         
         self.start_btn = ProcessButtonWidget(
-            start_script=config["script_wp_follow_start"],
-            stop_script=config["script_wp_follow_stop"],
+            start_script=config["script_wpfl_nav_start"],
+            stop_script=config["script_wpfl_nav_stop"],
         )
         self.start_btn.setText('Start')
         self.start_btn.setFixedSize(80, 80)
@@ -189,6 +189,14 @@ class WaypointsFollowOptBar(QWidget):
     
     def _on_start_btn_clicked(self):
         
+        if self._parent.is_localized() is False or self._parent.is_bringup() is False:
+            QMessageBox.warning(
+                self,
+                "Warning",
+                "Please localize and bring up the robot before starting.",
+            )
+            return
+        
         if self._last_waypoints_file is None or self._last_params_file is None:
             QMessageBox.warning(
                 self,
@@ -203,12 +211,14 @@ class WaypointsFollowOptBar(QWidget):
             self.start_btn.setStyleSheet(
                 "font-size: 20px; font-weight: bold; color: red")
             self._wp_fl_started = True
+            self.start_btn.start_process()
             
         else:
             self.start_btn.setText('Start')
             self.start_btn.setStyleSheet(
                 "font-size: 20px; font-weight: bold; color: green")
             self._wp_fl_started = False
+            self.start_btn.stop_process()
             
     
     def update_wp_info_display(self, text):
@@ -281,6 +291,12 @@ class WaypointsFollowDisplay(QWidget):
     def on_heading_quat_signal_received(self, data: dict):
         # Turn quaternion to Euler angles (roll, pitch, yaw) in degrees using the "xyz" order.
         quat = [data['x'], data['y'], data['z'], data['w']]
+
+        # quat_norm = sum(q*q for q in quat)**0.5
+        # if quat_norm < 1e-10:  # If norm is effectively zero
+        #     logger.warning(f"Received invalid quaternion with near-zero norm: {quat}")
+        #     return  # Skip processing this invalid quaternion
+        
         euler = R.from_quat(quat).as_euler('xyz', degrees=True)
         # Extract the ENU yaw (heading) from the Euler angles.
         yaw_enu = euler[2]
