@@ -6,8 +6,8 @@ foxglove_ws_uri: ws://localhost:8765
 foxglove_ws_subprotocol: foxglove.websocket.v1
 
 # scripts
-script_bringup_start:   "" #"scripts/bringup_start.bash"
-script_bringup_stop:    "" #"scripts/bringup_stop.bash"
+script_bringup_start:   "scripts/bringup_start.bash"
+script_bringup_stop:    "scripts/bringup_stop.bash"
 script_localize_start:  "scripts/localize_start.bash"
 script_localize_stop:   "scripts/localize_stop.bash"
 script_wpfl_nav_start:  "scripts/wpfl_nav_start.sh"

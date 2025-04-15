@@ -189,21 +189,21 @@ class WaypointsFollowOptBar(QWidget):
     
     def _on_start_btn_clicked(self):
         
-        if self._parent.is_localized() is False or self._parent.is_bringup() is False:
-            QMessageBox.warning(
-                self,
-                "Warning",
-                "Please localize and bring up the robot before starting.",
-            )
-            return
+        # if self._parent.is_localized() is False or self._parent.is_bringup() is False:
+        #     QMessageBox.warning(
+        #         self,
+        #         "Warning",
+        #         "Please localize and bring up the robot before starting.",
+        #     )
+        #     return
         
-        if self._last_waypoints_file is None or self._last_params_file is None:
-            QMessageBox.warning(
-                self,
-                "Warning",
-                "Please load waypoints and params files before starting.",
-            )
-            return
+        # if self._last_waypoints_file is None or self._last_params_file is None:
+        #     QMessageBox.warning(
+        #         self,
+        #         "Warning",
+        #         "Please load waypoints and params files before starting.",
+        #     )
+        #     return
         
         # Check if the process is already running
         if not self._wp_fl_started:
@@ -232,8 +232,11 @@ class WaypointsFollowDisplay(QWidget):
     def __init__(
         self,
         config,
+        # parent,
     ):
         super().__init__()
+
+        # self._parent = parent
         
         self._last_gps_lat = 0.0
         self._last_gps_lon = 0.0
