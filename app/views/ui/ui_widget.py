@@ -9,6 +9,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, QProcess
 from app.views.ui.widgets import StatusBar, MenuBox, MultiFuncDisplay
 from app.views.ui.widgets.common import ProcessButtonWidget
 from app.services import FoxgloveWsHandler
+from app.services import ROS2LaunchContainerManager
 from app.utils.logger import logger
 
 class UIWidget(QWidget):
@@ -27,9 +28,16 @@ class UIWidget(QWidget):
         self._bringup = False
         self._localized = False
         
-        self.foxglove_ws_handler = FoxgloveWsHandler(config=self._config)
+        self.foxglove_ws_handler = FoxgloveWsHandler(
+            config=self._config
+        )
+        self.launch_container_manager = ROS2LaunchContainerManager(
+            config=self._config,
+        )
         
-        self.mfunc_display = MultiFuncDisplay(config=self._config)
+        self.mfunc_display = MultiFuncDisplay(
+            config=self._config
+        )
         self.status_bar = StatusBar()
         self.menu_box = MenuBox()
         
