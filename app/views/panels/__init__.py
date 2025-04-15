@@ -1,0 +1,2 @@
+from .settings_panel_view import SettingsPanelView
+from .waypoints_logger_panel_view import WaypointsLoggerPanelView

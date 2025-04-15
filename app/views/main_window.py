@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (
 )
 
 from app.app_info import __appname__, __appdescription__
-from app.views.ui import UIWidget
+from .main_view import MainView
+# from app.views.ui import UIWidget
 
 
 class MainWindow(QMainWindow):
@@ -14,13 +15,10 @@ class MainWindow(QMainWindow):
     
     def __init__(
         self,
-        app=None,
         config=None,
     ):
         super().__init__()
-        
-        self.app = app
-        self.config = config
+        self._config = config
 
         # Set the window title
         self.setContentsMargins(0, 0, 0, 0)
@@ -30,10 +28,15 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 10, 10, 10)
         
-        ui_widget = UIWidget(
-            config=self.config
+        # ui_widget = UIWidget(
+        #     config=self._config
+        # )
+        # main_layout.addWidget(ui_widget)
+        
+        self.main_view = MainView(
+            config=self._config,
         )
-        main_layout.addWidget(ui_widget)
+        main_layout.addWidget(self.main_view)
 
         # Set the main layout
         widget = QWidget()

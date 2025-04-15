@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GPS Tracker with Bing Satellite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <style>
+        html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([37.7749, -122.4194], 19);
+        
+        // Define a tracking icon (red marker)
+        var trackingIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        // Bing layer with metadata loading
+        L.BingLayer = L.TileLayer.extend({
+            options: {
+                // Use the placeholder below; it will be replaced with the actual key at runtime.
+                bingMapsKey: '{bingApiKey}',
+                imagerySet: 'Aerial',
+                culture: 'en-US',
+                minZoom: 1,
+                maxZoom: 19
+            },
+            initialize: function(options) {
+                L.Util.setOptions(this, options);
+                this._url = null;
+                this._loadMetadata();
+            },
+            _loadMetadata: function() {
+                var _this = this;
+                var cbid = '_bing_metadata_' + L.Util.stamp(this);
+                window[cbid] = function(metadata) {
+                    _this._metadataLoaded(metadata);
+                    delete window[cbid];
+                };
+                var url = "https://dev.virtualearth.net/REST/v1/Imagery/Metadata/" + 
+                          this.options.imagerySet + 
+                          "?key=" + this.options.bingMapsKey + 
+                          "&include=ImageryProviders&jsonp=" + cbid;
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = url;
+                script.id = cbid;
+                document.getElementsByTagName("head")[0].appendChild(script);
+            },
+            _metadataLoaded: function(metadata) {
+                if (metadata.statusCode !== 200 || !metadata.resourceSets ||
+                    metadata.resourceSets.length < 1 || !metadata.resourceSets[0].resources ||
+                    metadata.resourceSets[0].resources.length < 1) {
+                    // Fallback to OpenStreetMap
+                    this._url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    this.options.attribution = '&copy; OpenStreetMap contributors';
+                    L.TileLayer.prototype.initialize.call(this, this._url, {
+                        subdomains: ['a', 'b', 'c'],
+                        minZoom: this.options.minZoom,
+                        maxZoom: this.options.maxZoom,
+                        attribution: this.options.attribution
+                    });
+                    this.fire('ready');
+                    return;
+                }
+                var resource = metadata.resourceSets[0].resources[0];
+                if (!resource.imageUrl) {
+                    this._url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    this.options.attribution = '&copy; OpenStreetMap contributors';
+                    L.TileLayer.prototype.initialize.call(this, this._url, {
+                        subdomains: ['a', 'b', 'c'],
+                        minZoom: this.options.minZoom,
+                        maxZoom: this.options.maxZoom,
+                        attribution: this.options.attribution
+                    });
+                    this.fire('ready');
+                    return;
+                }
+                this._url = resource.imageUrl.replace('{culture}', this.options.culture)
+                                             .replace('{s}', '{subdomain}');
+                var subdomains = ['t0', 't1', 't2', 't3'];
+                this.options.attribution = "";
+                var providers = resource.imageryProviders || [];
+                for (var i = 0; i < providers.length; i++) {
+                    this.options.attribution += providers[i].attribution + ' ';
+                }
+                this.fire('ready');
+                L.TileLayer.prototype.initialize.call(this, this._url, {
+                    subdomains: subdomains,
+                    minZoom: this.options.minZoom,
+                    maxZoom: this.options.maxZoom,
+                    attribution: this.options.attribution
+                });
+            },
+            getTileUrl: function(tilePoint) {
+                if (!this._url) return "";
+                var zoom = this._getZoomForUrl();
+                var quadKey = "";
+                for (var i = zoom; i > 0; i--) {
+                    var digit = 0;
+                    var mask = 1 << (i - 1);
+                    if ((tilePoint.x & mask) !== 0) digit += 1;
+                    if ((tilePoint.y & mask) !== 0) digit += 2;
+                    quadKey += digit;
+                }
+                return L.Util.template(this._url, {
+                    subdomain: this.options.subdomains[tilePoint.x % this.options.subdomains.length],
+                    quadkey: quadKey
+                });
+            }
+        });
+        
+        L.bingLayer = function(options) {
+            return new L.BingLayer(options);
+        };
+        
+        // Use the placeholder for the Bing API key
+        var bingApiKey = '{bingApiKey}';
+        var bingLayer = L.bingLayer({
+            bingMapsKey: bingApiKey,
+            imagerySet: 'Aerial',
+            maxZoom: 19
+        });
+        
+        bingLayer.on('ready', function() {
+            bingLayer.addTo(map);
+        });
+        
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+        var baseMaps = { "Bing Satellite": bingLayer, "OpenStreetMap": osmLayer };
+        L.control.layers(baseMaps).addTo(map);
+        
+        var trackMarker = L.marker([37.7749, -122.4194], { icon: trackingIcon, rotationAngle: 0 }).addTo(map);
+        var markersGroup = L.layerGroup().addTo(map);
+        
+        new QWebChannel(qt.webChannelTransport, function(channel) {
+            var jspy_bridge = channel.objects.jspy_bridge;
+            jspy_bridge.signal_tracker_gps_updated.connect(function(positionJson) {
+                var position = JSON.parse(positionJson);
+                trackMarker.setLatLng([position.latitude, position.longitude]);
+                map.panTo([position.latitude, position.longitude]);
+            });
+            
+            jspy_bridge.signal_tracker_heading_updated.connect(function(headingJson) {
+                var heading = JSON.parse(headingJson);
+                trackMarker.setRotationAngle(heading.heading);
+            });
+            
+            jspy_bridge.signal_marks_gps_added.connect(function(positionJson) {
+                var position = JSON.parse(positionJson);
+                var markerPoint = L.circleMarker([position.latitude, position.longitude], {
+                    radius: 0.25,
+                    color: 'red',
+                    fillColor: 'red',
+                    fillOpacity: 1
+                });
+                markersGroup.addLayer(markerPoint);
+            });
+            
+            jspy_bridge.signal_marks_gps_removed.connect(function(positionJson) {
+                var position = JSON.parse(positionJson);
+                markersGroup.eachLayer(function(layer) {
+                    if (layer.getLatLng().lat === position.latitude &&
+                        layer.getLatLng().lng === position.longitude) {
+                        markersGroup.removeLayer(layer);
+                    }
+                });
+            });
+            
+            window.clearMarkers = function() {
+                markersGroup.clearLayers();
+            };
+        });
+    </script>
+</body>
+</html>

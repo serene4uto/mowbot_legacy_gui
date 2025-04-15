@@ -13,6 +13,10 @@ from app.config import get_config
 from app import configs as mowbot_configs
 from app.utils.logger import logger, ColoredFormatter, ColoredLogger
 
+from app.views import MainView
+from app.controllers import MainController
+from app.models import MainModel
+
 def main():
     """App entry point."""
 
@@ -74,9 +78,16 @@ def main():
     app.setApplicationName(__appname__)
     
     window = MainWindow(
-        app=app,
-        config=config,
+        config=config
     )
+    
+    controller = MainController(
+        main_view=window.main_view,
+        main_model=MainModel(
+            config=config
+        ),
+    )
+    
     window.show()
     
     window.showMaximized()

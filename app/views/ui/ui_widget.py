@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QMessageBox,
+    QPushButton,
 )
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QProcess
 from app.views.ui.widgets import StatusBar, MenuBox, MultiFuncDisplay
@@ -42,20 +43,14 @@ class UIWidget(QWidget):
         self.menu_box = MenuBox()
         
         # Bringup button
-        self.bringup_btn = ProcessButtonWidget(
-            start_script=self._config['script_bringup_start'],
-            stop_script=self._config['script_bringup_stop'],
-        )
+        self.bringup_btn = QPushButton()
         self.bringup_btn.setText('Start Bringup')
         self.bringup_btn.setStyleSheet("font-size: 20px; font-weight: bold; color: green")
         self.bringup_btn.setFixedHeight(80)
         self.bringup_btn.setEnabled(True)
         
         # Localize button
-        self.localize_btn = ProcessButtonWidget(
-            start_script=self._config['script_localize_start'],
-            stop_script=self._config['script_localize_stop'],
-        )
+        self.localize_btn = QPushButton()
         self.localize_btn.setText('Start Localize')
         self.localize_btn.setStyleSheet(
             "font-size: 20px; font-weight: bold; color: gray")
@@ -101,6 +96,7 @@ class UIWidget(QWidget):
         # Connect button
         self.bringup_btn.clicked.connect(self.on_bringup_btn_clicked)
         self.localize_btn.clicked.connect(self.on_localize_btn_clicked)
+        
         # Connect signals
         self.menu_box.settings_btn_clicked_signal.connect(
             self.mfunc_display.on_settings_btn_clicked
