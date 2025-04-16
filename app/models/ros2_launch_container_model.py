@@ -4,7 +4,7 @@ import os
 import docker
 import json
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer, QThread, pyqtSlot
-from app.services.ros2_launch_container_cfg import CONTAINERS_CFG
+from app.models.ros2_launch_container_cfg import CONTAINERS_CFG
 from app.utils.logger import logger
 
 class ROS2LaunchContainerModel(QObject):

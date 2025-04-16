@@ -26,8 +26,7 @@ CONTAINERS_CFG = {
             "
         ],
         "network_mode": "host",
-        # "privileged": True,
-        "privileged": False,
+        "privileged": True,
         "environment": {
             "DISPLAY": ":0.0",
         },
