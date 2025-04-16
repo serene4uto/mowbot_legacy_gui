@@ -17,6 +17,7 @@ class MainController(QObject):
     """
     def __init__(
         self, 
+        config: dict,
         main_view: MainView, 
         main_model: MainModel,
     ):
@@ -28,7 +29,7 @@ class MainController(QObject):
             main_model (MainModel): The main model of the application.
         """
         super().__init__()
-        
+        self._config = config
         self._main_view = main_view
         self._main_model = main_model
         

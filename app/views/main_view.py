@@ -41,9 +41,6 @@ class MainView(QWidget):
         self.menu_box = MenuBoxView()
         self.multi_panel = MultiPanelView(config=self._config)
         
-        self.menu_box_ext = QWidget()
-        
-        
         self.bringup_btn = QPushButton("Start Bringup")
         self.bringup_btn.setFixedHeight(80)
         self.bringup_btn.setStyleSheet(
@@ -74,16 +71,10 @@ class MainView(QWidget):
         hlayout = QHBoxLayout()
         
         hleft_layout = QVBoxLayout()
-        
-        menu_box_ext_layout = QVBoxLayout()
-        menu_box_ext_layout.addWidget(self.menu_box)
-        menu_box_ext_layout.stretch(1)
-        menu_box_ext_layout.addSpacing(10)
-        menu_box_ext_layout.addWidget(self.localize_btn)
-        menu_box_ext_layout.addSpacing(10)
-        self.menu_box_ext.setLayout(menu_box_ext_layout)
-        
-        hleft_layout.addWidget(self.menu_box_ext)
+        hleft_layout.addWidget(self.menu_box)
+        hleft_layout.stretch(1)
+        hleft_layout.addSpacing(10)
+        hleft_layout.addWidget(self.localize_btn)
         hleft_layout.addSpacing(10)
         hleft_layout.addWidget(self.bringup_btn)
         hlayout.addLayout(hleft_layout)
@@ -242,9 +233,7 @@ class MainView(QWidget):
             self.status_bar.setEnabled(False)
             self._is_waiting_for_bringup = None
 
-        
-            
-    
+
     @pyqtSlot(str)
     def on_signal_localization_container_status(self, status: str):
         """

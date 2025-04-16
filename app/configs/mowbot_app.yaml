@@ -8,6 +8,9 @@ foxglove_ws_subprotocol: foxglove.websocket.v1
 # bing api key
 bing_api_key: "AkCDUXwYzM3w36XYcNeT0kNOFhpTiQuwluXkQlFBs1WhFbknP2_2iDBXeL_WzXCc"
 
+# container
+container_stop_timeout: 1
+
 
 # others
 mowbot_legacy_data_path: "/mowbot_legacy_data"

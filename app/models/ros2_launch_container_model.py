@@ -20,12 +20,14 @@ class ROS2LaunchContainerModel(QObject):
     _instance = None
 
     @staticmethod
-    def get_instance(config=None) -> 'ROS2LaunchContainerModel':
+    def get_instance(config) -> 'ROS2LaunchContainerModel':
         if ROS2LaunchContainerModel._instance is None:
             ROS2LaunchContainerModel._instance = ROS2LaunchContainerModel(config)
         return ROS2LaunchContainerModel._instance
 
-    def __init__(self, config=None):
+    def __init__(self, 
+            config
+        ):
         if ROS2LaunchContainerModel._instance is not None:
             raise Exception("This class is a singleton! Use get_instance() instead.")
         super().__init__()
@@ -77,9 +79,9 @@ class ROS2LaunchContainerModel(QObject):
         except docker.errors.NotFound:
             logger.warning(f"Container not found: {key}")
             
-    def stop_all_launch_containers(self) -> None:
+    def stop_all_launch_containers(self, timeout: int = 10) -> None:
         for key in self.containers_config.keys():
-            self.stop_launch_container(key)
+            self.stop_launch_container(key=key, timeout=timeout)
 
     def get_launch_container_status(self, key: str) -> str:
         try:
@@ -233,11 +235,12 @@ class _ContainerManageWorker(QObject):
         # Process all start requests.
         while self.start_queue:
             key = self.start_queue.pop(0)
-            self.model.start_launch_container(key)
+            self.model.start_launch_container(key=key)
         # Process all stop requests.
         while self.stop_queue:
             key = self.stop_queue.pop(0)
-            self.model.stop_launch_container(key)
+            self.model.stop_launch_container(
+                key=key, timeout=self.model._config["container_stop_timeout"])
     
     def enqueue_start(self, key: str):
         """Adds a container start request to the queue."""
