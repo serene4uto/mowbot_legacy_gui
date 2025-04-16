@@ -64,7 +64,15 @@ class MainController(QObject):
         self._main_view.signal_nav_wpfl_params_load_btn_clicked.connect(
             self.on_signal_load_params_btn_clicked,
         )
-        
+        self._main_view.signal_exit_btn_clicked.connect(
+            self.on_app_exit,
+        )
+        self._main_view.signal_shutdown_btn_clicked.connect(
+            self.on_signal_shutdown_btn_clicked,
+        )
+        self._main_view.signal_restart_btn_clicked.connect(
+            self.on_signal_restart_btn_clicked,
+        )
         
         # Container status update signals
         self._main_model.ros2_launch_container_model.signal_container_status_updated.connect(
@@ -90,7 +98,7 @@ class MainController(QObject):
             self._main_view.on_signal_params_loaded,
         )
         
-    
+    @pyqtSlot()
     def on_app_exit(self):
         """
         Handles application exit by stopping all containers and quitting the app.
@@ -98,6 +106,20 @@ class MainController(QObject):
         logger.info("Exiting application...")
         self._main_model.ros2_launch_container_model.remove_all_launch_containers()
         self._app.quit()
+        
+    @pyqtSlot()
+    def on_signal_shutdown_btn_clicked(self):
+        """
+        Slot method to handle the shutdown button click event.
+        """
+        logger.info("Shutdown button clicked.")
+        
+    @pyqtSlot()
+    def on_signal_restart_btn_clicked(self):
+        """
+        Slot method to handle the restart button click event.
+        """
+        logger.info("Restart button clicked.")
     
     @pyqtSlot(str)
     def on_signal_bringup_btn_clicked(self, cmd: str):

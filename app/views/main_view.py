@@ -1,16 +1,21 @@
 from typing import Dict
-
+import pathlib
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
+    QMessageBox,
+    QLabel,
 )
 
 from PyQt5.QtCore import (
+    Qt,
     pyqtSignal,
     pyqtSlot,
 )
+
+from PyQt5.QtGui import QFont, QIcon
 
 from .status_bar_view import StatusBarView
 from .menu_box_view import MenuBoxView
@@ -35,6 +40,9 @@ class MainView(QWidget):
     signal_nav_wpfl_waypoints_load_btn_clicked = pyqtSignal(str) # load_file_path
     signal_nav_wpfl_params_load_btn_clicked = pyqtSignal(str) # load_file_path
     
+    signal_exit_btn_clicked = pyqtSignal()
+    signal_shutdown_btn_clicked = pyqtSignal()
+    signal_restart_btn_clicked = pyqtSignal()
     
     def __init__(self, config):
         super().__init__()
@@ -47,6 +55,15 @@ class MainView(QWidget):
         self._is_waiting_for_bringup = None
         self._is_waiting_for_localization = None
         self._is_waiting_for_navigation = None
+        
+        self.title_label = QLabel("MOWBOT CONTROL SYSTEM")
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet("""
+            font-size: 20px; 
+            font-weight: bold; 
+            color: #2c3e50;
+            background-color: #27ae60; 
+        """)
         
         self.status_bar = StatusBarView()
         self.menu_box = MenuBoxView()
@@ -64,6 +81,79 @@ class MainView(QWidget):
             "font-size: 16px; font-weight: bold; color: green")
         self.localize_btn.setEnabled(True)
         
+        # Restart button
+        self.restart_btn = QPushButton()
+        self.restart_btn.setFixedWidth(80)
+        self.restart_btn.setFixedHeight(80)
+        self.restart_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f1c40f;
+                border-radius: 25px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #d4ac0d;
+            }
+            QPushButton:pressed {
+                background-color: #b7950b;
+            }
+            QPushButton:disabled {
+                background-color: #aaaaaa;
+            }
+        """)
+        self.restart_btn.setIcon(QIcon(
+            str(pathlib.Path(__file__).parent.parent / "resources" / "icons" / "restart.png")))
+        self.restart_btn.setIconSize(self.restart_btn.size() * 0.6)
+        self.restart_btn.setToolTip("Restart System")
+        
+        self.shutdown_btn = QPushButton()
+        self.shutdown_btn.setFixedWidth(80)
+        self.shutdown_btn.setFixedHeight(80)
+        self.shutdown_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                border-radius: 25px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:pressed {
+                background-color: #a33022;
+            }
+            QPushButton:disabled {
+                background-color: #aaaaaa;
+            }
+        """)
+        self.shutdown_btn.setIcon(QIcon(
+            str(pathlib.Path(__file__).parent.parent / "resources" / "icons" / "shutdown.png")))
+        self.shutdown_btn.setIconSize(self.shutdown_btn.size() * 0.6)  # Adjust size as needed
+        self.shutdown_btn.setToolTip("Shutdown System")
+        
+        self.exit_btn = QPushButton()
+        self.exit_btn.setFixedWidth(80)
+        self.exit_btn.setFixedHeight(80)
+        self.exit_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                border-radius: 25px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #1c6ea4;
+            }
+            QPushButton:disabled {
+                background-color: #aaaaaa;
+            }
+        """)
+        self.exit_btn.setIcon(QIcon(
+            str(pathlib.Path(__file__).parent.parent / "resources" / "icons" / "exit.png")))
+        self.exit_btn.setIconSize(self.exit_btn.size() * 0.6)
+        self.exit_btn.setToolTip("Exit Application")
+        
         self.menu_box.setEnabled(False)
         self.multi_panel.setEnabled(False)
         self.status_bar.setEnabled(False)
@@ -76,7 +166,18 @@ class MainView(QWidget):
 
     def _init_ui(self):
         layout = QVBoxLayout()
-        layout.addWidget(self.status_bar)
+        layout.addWidget(self.title_label)
+        layout.addSpacing(10)
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(self.status_bar)
+        top_layout.addSpacing(10)
+        top_layout.addStretch(1)
+        top_layout.addWidget(self.shutdown_btn)
+        top_layout.addSpacing(10)
+        top_layout.addWidget(self.restart_btn)
+        top_layout.addSpacing(10)
+        top_layout.addWidget(self.exit_btn)
+        layout.addLayout(top_layout)
         layout.addSpacing(10)
         
         hlayout = QHBoxLayout()
@@ -117,7 +218,26 @@ class MainView(QWidget):
             self.on_nav_wpfl_waypoints_load_btn_clicked)
         self.multi_panel.waypoints_navigator_panel.option_bar.load_params_btn.clicked.connect(
             self.on_nav_wpfl_params_load_btn_clicked)
-    
+        
+        self.exit_btn.clicked.connect(self.on_exit_btn_clicked)
+        self.shutdown_btn.clicked.connect(self.on_shutdown_btn_clicked)
+        self.restart_btn.clicked.connect(self.on_restart_btn_clicked)
+        
+    def on_exit_btn_clicked(self):
+        """Forward the exit button event."""
+        # self.signal_exit_btn_clicked.emit()
+        self.signal_exit_btn_clicked.emit()
+        
+    def on_shutdown_btn_clicked(self):
+        """Forward the shutdown button event."""
+        # self.signal_shutdown_btn_clicked.emit()
+        self.signal_shutdown_btn_clicked.emit()
+        
+    def on_restart_btn_clicked(self):
+        """Forward the restart button event."""
+        # self.signal_restart_btn_clicked.emit()
+        self.signal_restart_btn_clicked.emit()
+        
     def on_settings_btn_clicked(self):
         """Forward the settings button event from the menu and update the UI."""
         self.menu_box.highlight_button("settings")

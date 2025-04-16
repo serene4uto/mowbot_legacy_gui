@@ -6,6 +6,7 @@ import logging
 import argparse
 
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import Qt
 
 from app.app_info import __appname__
 from app.views import MainWindow
@@ -90,12 +91,16 @@ def main():
         ),
     )
     
-    window.show()
-    
+    # Remove window title bar/frame
+    window.setWindowFlags(Qt.FramelessWindowHint)
+        
+    # Make window full screen
+    # window.showFullScreen()
     window.showMaximized()
-    window.raise_()
+    window.raise_() # Bring the window to the front
     
-    window.setFixedSize(window.size())
+    # Set the window to be non-resizable
+    # window.setFixedSize(window.size())
     
     # Run the app
     sys.exit(app.exec())

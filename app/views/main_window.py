@@ -7,8 +7,6 @@ from PyQt5.QtWidgets import (
 
 from app.app_info import __appname__, __appdescription__
 from .main_view import MainView
-# from app.views.ui import UIWidget
-
 
 class MainWindow(QMainWindow):
     """Main window class for the application"""
@@ -27,11 +25,6 @@ class MainWindow(QMainWindow):
         # Set the central widget and the main layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 10, 10, 10)
-        
-        # ui_widget = UIWidget(
-        #     config=self._config
-        # )
-        # main_layout.addWidget(ui_widget)
         
         self.main_view = MainView(
             config=self._config,
