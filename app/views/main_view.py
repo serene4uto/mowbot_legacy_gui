@@ -23,10 +23,19 @@ class MainView(QWidget):
     signal_logger_btn_clicked = pyqtSignal()
     signal_navigator_btn_clicked = pyqtSignal()
     
-    signal_bringup_btn_clicked = pyqtSignal(str)
-    signal_localization_btn_clicked = pyqtSignal(str)
-    signal_navigation_wp_follow_btn_clicked = pyqtSignal(str)
-
+    signal_bringup_btn_clicked = pyqtSignal(str) # start or stop
+    signal_localization_btn_clicked = pyqtSignal(str) # start or stop
+    signal_navigation_wp_follow_btn_clicked = pyqtSignal(str) # start or stop
+    
+    signal_log_btn_clicked = pyqtSignal()
+    signal_log_remove_btn_clicked = pyqtSignal()
+    signal_log_clear_btn_clicked = pyqtSignal()
+    signal_log_save_btn_clicked = pyqtSignal(str, dict) # save_path, data
+    
+    signal_nav_wpfl_waypoints_load_btn_clicked = pyqtSignal(str) # load_file_path
+    signal_nav_wpfl_params_load_btn_clicked = pyqtSignal(str) # load_file_path
+    
+    
     def __init__(self, config):
         super().__init__()
         self._config = config
@@ -95,6 +104,19 @@ class MainView(QWidget):
         self.localize_btn.clicked.connect(self.on_localize_btn_clicked)
         self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.clicked.connect(
             self.on_navigate_btn_clicked)
+        self.multi_panel.waypoints_logger_panel.option_bar.log_btn.clicked.connect(
+            self.on_waypoint_log_btn_clicked)
+        self.multi_panel.waypoints_logger_panel.option_bar.rm_btn.clicked.connect(
+            self.on_selected_logged_waypoint_remove_btn_clicked)
+        self.multi_panel.waypoints_logger_panel.option_bar.clear_btn.clicked.connect(
+            self.on_logged_waypoints_clear_btn_clicked)
+        self.multi_panel.waypoints_logger_panel.option_bar.save_btn.clicked.connect(
+            self.on_logged_waypoints_save_btn_clicked)
+        
+        self.multi_panel.waypoints_navigator_panel.option_bar.load_wp_btn.clicked.connect(
+            self.on_nav_wpfl_waypoints_load_btn_clicked)
+        self.multi_panel.waypoints_navigator_panel.option_bar.load_params_btn.clicked.connect(
+            self.on_nav_wpfl_params_load_btn_clicked)
     
     def on_settings_btn_clicked(self):
         """Forward the settings button event from the menu and update the UI."""
@@ -188,6 +210,53 @@ class MainView(QWidget):
             self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setText("...")
             self.signal_navigation_wp_follow_btn_clicked.emit("stop")
             self._is_waiting_for_navigation = "stop"
+            
+    def on_waypoint_log_btn_clicked(self):
+        """Forward the log button event."""
+        self.multi_panel.waypoints_logger_panel.update_table_map_with_logged_waypoint(
+            latitude=self.multi_panel.waypoints_logger_panel.get_last_gps_lat(),
+            longitude=self.multi_panel.waypoints_logger_panel.get_last_gps_lon(),
+            heading=self.multi_panel.waypoints_logger_panel.get_last_heading()
+        )
+        self.signal_log_btn_clicked.emit()
+        
+    def on_selected_logged_waypoint_remove_btn_clicked(self):
+        """Forward the remove button event."""
+        self.multi_panel.waypoints_logger_panel.remove_selected_log_waypoints()
+        self.signal_log_remove_btn_clicked.emit()
+        
+    def on_logged_waypoints_clear_btn_clicked(self):
+        """Forward the clear button event."""
+        self.multi_panel.waypoints_logger_panel.clear_log_waypoints()
+        self.signal_log_clear_btn_clicked.emit()
+        
+    def on_logged_waypoints_save_btn_clicked(self):
+        """Forward the save button event."""
+        save_path = self.multi_panel.waypoints_logger_panel.prompt_for_save_file()
+        current_waypoints = self.multi_panel.waypoints_logger_panel.get_current_logged_waypoints()
+        if not save_path:
+            return
+        if not current_waypoints:
+            return
+        self.signal_log_save_btn_clicked.emit(
+            save_path,
+            {"waypoints": current_waypoints}
+        )
+        # logger.info(f"Save path: {save_path}")
+        
+    def on_nav_wpfl_waypoints_load_btn_clicked(self):
+        """Forward the waypoint load button event."""
+        load_file_path = self.multi_panel.waypoints_navigator_panel.prompt_for_waypoint_file_load()
+        if not load_file_path:
+            return
+        self.signal_nav_wpfl_waypoints_load_btn_clicked.emit(load_file_path)
+    
+    def on_nav_wpfl_params_load_btn_clicked(self):
+        """Forward the waypoint params load button event."""
+        load_file_path = self.multi_panel.waypoints_navigator_panel.prompt_for_params_file_load()
+        if not load_file_path:
+            return
+        self.signal_nav_wpfl_params_load_btn_clicked.emit(load_file_path)
         
         
     @pyqtSlot(str)
@@ -306,6 +375,10 @@ class MainView(QWidget):
             latitude=data['latitude'],
             longitude=data['longitude'],
         )
+        self.multi_panel.waypoints_navigator_panel.update_gps_info(
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+        )
         
         
     @pyqtSlot(dict)
@@ -314,4 +387,33 @@ class MainView(QWidget):
         self.multi_panel.waypoints_logger_panel.update_heading_info(
             data=data,
         )
+        self.multi_panel.waypoints_navigator_panel.update_heading_info(
+            data=data,
+        )
+        
+    @pyqtSlot(str, dict)
+    def on_signal_waypoints_loaded(self, file_path: str, waypoints: dict):
+        """
+        Slot method to handle the waypoints loaded signal.
+        """
+        # Update the waypoint info display with the loaded waypoints
+        self.multi_panel.waypoints_navigator_panel.update_load_waypoints_file_info(
+            file_path=file_path)
+        # update waypoint to map
+        self.multi_panel.waypoints_navigator_panel.map_view.reset()
+        for waypoint in waypoints["waypoints"]:
+            self.multi_panel.waypoints_navigator_panel.map_view.add_gps_position_mark(
+                latitude=waypoint["latitude"],
+                longitude=waypoint["longitude"],
+            )
+
+    
+    @pyqtSlot(str, dict)
+    def on_signal_params_loaded(self, file_path: str, params: dict):
+        """
+        Slot method to handle the parameters loaded signal.
+        """
+        # Update the parameter info display with the loaded parameters
+        self.multi_panel.waypoints_navigator_panel.update_load_params_file_info(
+            file_path=file_path)
         

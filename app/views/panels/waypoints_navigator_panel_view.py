@@ -1,4 +1,7 @@
 # waypoints_navigator_panel_view.py
+import os
+import numpy as np
+from scipy.spatial.transform import Rotation as R
 from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
@@ -92,6 +95,10 @@ class WaypointsNavigatorPanelView(QWidget):
         super().__init__()
         self._config = config
         
+        self._last_gps_lat = None
+        self._last_gps_lon = None
+        self._last_gps_heading = None
+        
         # Create subcomponents.
         self.option_bar = WaypointsNavigatorOptionBarView(
             config=self._config
@@ -124,3 +131,72 @@ class WaypointsNavigatorPanelView(QWidget):
         
         layout.addStretch(1)
         self.setLayout(layout)
+        
+        
+    def prompt_for_waypoint_file_load(self):
+        """
+        Prompts the user to select a waypoint file for loading.
+        """
+        
+        load_file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Waypoints File",
+            self._config['mowbot_legacy_data_path'] + '/waypoints',
+            "YAML Files (*.yaml);;All Files (*)",
+        )
+        
+        return load_file_path
+    
+    def prompt_for_params_file_load(self):
+        """
+        Prompts the user to select a parameters file for loading.
+        """
+        
+        load_file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Parameters File",
+            self._config['mowbot_legacy_data_path'] + '/params',
+            "YAML Files (*.yaml);;All Files (*)",
+        )
+        
+        return load_file_path
+    
+    def update_gps_info(self, latitude: float, longitude: float):
+        """
+        Updates the map view's GPS marker and refreshes the GPS information display.
+        """
+        self._last_gps_lat = latitude
+        self._last_gps_lon = longitude
+        self.map_view.update_gps_position(latitude=latitude, longitude=longitude)
+        self.gps_info_display.setText(
+            f"lat: {latitude:.6f}, lon: {longitude:.6f}"
+        )
+        
+    def update_heading_info(self, data: dict):
+        """
+        Converts quaternion heading data to a readable value, updates the map view's heading,
+        and refreshes the heading information display.
+        """
+        quat = [data['x'], data['y'], data['z'], data['w']]
+        euler = R.from_quat(quat).as_euler('xyz', degrees=True)
+        yaw_enu = euler[2]
+        yaw_ned = (90 - yaw_enu) % 360
+        self.map_view.update_heading(heading=yaw_ned)
+        self._last_heading = np.deg2rad(yaw_enu)
+        self.hdg_info_display.setText(
+            f"heading: {self._last_heading:.4f} rad"
+        )
+        
+    def update_load_waypoints_file_info(self, file_path):
+        """
+        Updates the waypoints file information display.
+        """
+        self.option_bar.wp_info_display.setText(f"Waypoints: {file_path}")
+
+    def update_load_params_file_info(self, file_path):
+        """
+        Updates the parameters file information display.
+        """
+        self.option_bar.param_info_display.setText(f"Params: {file_path}")
+        
+    

@@ -247,7 +247,7 @@ class FoxgloveWsModel(QObject):
                     'altitude': navsatfix_data.get('altitude', 0),
                 }
                 self.signal_gps_fix.emit(gps_fix)
-                logger.info(f"Navsatfix Data: {navsatfix_data}")
+                # logger.info(f"Navsatfix Data: {navsatfix_data}")
             elif topic == '/sensor_status':
                 sensorstatus_data = decode_sensorstatus(payload)
                 self.signal_health_status.emit(sensorstatus_data)

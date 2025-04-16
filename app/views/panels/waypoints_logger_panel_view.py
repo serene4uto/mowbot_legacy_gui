@@ -52,6 +52,14 @@ class WaypointsLoggerOptionBarView(QWidget):
         self.rm_btn = QPushButton('Remove')
         self.rm_btn.setFixedWidth(80)
         self.rm_btn.setFixedHeight(80)
+        
+        self.clear_btn = QPushButton('Clear')
+        self.clear_btn.setFixedWidth(80)
+        self.clear_btn.setFixedHeight(80)
+        
+        self.gen_btn = QPushButton('Generate')
+        self.gen_btn.setFixedWidth(80)
+        self.gen_btn.setFixedHeight(80)
 
         self.save_btn = QPushButton('Save')
         self.save_btn.setFixedWidth(80)
@@ -66,6 +74,10 @@ class WaypointsLoggerOptionBarView(QWidget):
         btn_layout.addWidget(self.log_btn)
         btn_layout.setSpacing(10)
         btn_layout.addWidget(self.rm_btn)    
+        btn_layout.setSpacing(10)
+        btn_layout.addWidget(self.clear_btn)
+        btn_layout.setSpacing(10)
+        btn_layout.addWidget(self.gen_btn)
         btn_layout.setSpacing(10)
         
         btn_layout.addStretch(1)
@@ -87,6 +99,13 @@ class WaypointsLoggerOptionBarView(QWidget):
         self.table_view.setItem(row_position, 0, QTableWidgetItem(data['latitude']))
         self.table_view.setItem(row_position, 1, QTableWidgetItem(data['longitude']))
         self.table_view.setItem(row_position, 2, QTableWidgetItem(data['heading']))
+        
+    def remove_row_from_table(self, row: int):
+        """
+        Removes a row from the table at the specified index.
+        """
+        if row >= 0 and row < self.table_view.rowCount():
+            self.table_view.removeRow(row)
         
     def clear_table(self):
         self.table_view.setRowCount(0)
@@ -145,7 +164,26 @@ class WaypointsLoggerPanelView(QWidget):
         self.setLayout(layout) 
         
     # -- UI Update API Methods --
-    def update_table_with_logged_waypoint(self, latitude: float, longitude: float, heading: float):
+    def get_last_gps_lat(self) -> float:
+        """
+        Returns the last logged GPS latitude.
+        """
+        return self._last_gps_lat
+    
+    def get_last_gps_lon(self) -> float:
+        """
+        Returns the last logged GPS longitude.
+        """
+        return self._last_gps_lon
+    
+    def get_last_heading(self) -> float:
+        """
+        Returns the last logged heading.
+        """
+        return self._last_heading
+
+    def update_table_map_with_logged_waypoint(self, 
+                latitude: float, longitude: float, heading: float):
         """
         Updates the map view with a new marker and adds the corresponding data to the table.
         """
@@ -154,11 +192,8 @@ class WaypointsLoggerPanelView(QWidget):
             'latitude': str(latitude),
             'longitude': str(longitude),
             'heading': str(heading),
-        })
-    
-    def clear_logged_waypoints(self):
-        self.option_bar.clear_table()
-
+        })       
+        
     def update_gps_info(self, latitude: float, longitude: float):
         """
         Updates the map view's GPS marker and refreshes the GPS information display.
@@ -209,3 +244,55 @@ class WaypointsLoggerPanelView(QWidget):
         Provides a UI indication (or logs a message) that the waypoints were saved successfully.
         """
         logger.info(f"Waypoints saved to {file_path}")
+        
+    ####
+    def get_current_logged_waypoints(self) -> list:
+        """
+        Returns a list of logged waypoints as dictionaries with keys:
+        'latitude', 'longitude', and 'heading'.
+        """
+        waypoints = []
+        for row in range(self.option_bar.table_view.rowCount()):
+            lat = self.option_bar.table_view.item(row, 0).text()
+            lon = self.option_bar.table_view.item(row, 1).text()
+            hdg = self.option_bar.table_view.item(row, 2).text()
+            waypoints.append({
+                'latitude': float(lat),
+                'longitude': float(lon),
+                'heading': float(hdg),
+            })
+        return waypoints
+    
+    def remove_selected_log_waypoints(self):
+        """
+        Removes the selected waypoint from the table and map.
+        """
+        selected_row = self.option_bar.table_view.currentRow()
+        if selected_row >= 0:
+            lat = self.option_bar.table_view.item(selected_row, 0).text()
+            lon = self.option_bar.table_view.item(selected_row, 1).text()
+            # remove marker from map
+            self.map_view.remove_gps_position_mark(
+                latitude=float(lat), longitude=float(lon)
+            )
+            self.option_bar.remove_row_from_table(selected_row)
+    
+    def clear_log_waypoints(self):
+        """
+        Clears all logged waypoints from the table and map.
+        """
+        # Get all waypoints first before modifying the table
+        waypoints_to_remove = []
+        for row in range(self.option_bar.table_view.rowCount()):
+            item_lat = self.option_bar.table_view.item(row, 0)
+            item_lon = self.option_bar.table_view.item(row, 1)
+            if item_lat and item_lon:  # Check if items exist
+                waypoints_to_remove.append((float(item_lat.text()), float(item_lon.text())))
+        
+        # Remove markers from map
+        for lat, lon in waypoints_to_remove:
+            self.map_view.remove_gps_position_mark(latitude=lat, longitude=lon)
+        
+        # Clear the entire table at once
+        self.option_bar.clear_table()
+    

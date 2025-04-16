@@ -55,6 +55,16 @@ class MainController(QObject):
         self._main_view.signal_navigation_wp_follow_btn_clicked.connect(
             self.on_signal_navigation_wp_follow_btn_clicked,
         )
+        self._main_view.signal_log_save_btn_clicked.connect(
+            self.on_signal_log_save_btn_clicked,
+        )
+        self._main_view.signal_nav_wpfl_waypoints_load_btn_clicked.connect(
+            self.on_signal_load_waypoints_btn_clicked,
+        )
+        self._main_view.signal_nav_wpfl_params_load_btn_clicked.connect(
+            self.on_signal_load_params_btn_clicked,
+        )
+        
         
         # Container status update signals
         self._main_model.ros2_launch_container_model.signal_container_status_updated.connect(
@@ -72,6 +82,13 @@ class MainController(QObject):
             self._main_view.on_signal_heading_quat_received,
         )
         
+        # others
+        self._main_model.signal_on_waypoints_loaded.connect(
+            self._main_view.on_signal_waypoints_loaded,
+        )
+        self._main_model.signal_on_params_loaded.connect(
+            self._main_view.on_signal_params_loaded,
+        )
         
     
     def on_app_exit(self):
@@ -81,7 +98,6 @@ class MainController(QObject):
         logger.info("Exiting application...")
         self._main_model.ros2_launch_container_model.remove_all_launch_containers()
         self._app.quit()
-            
     
     @pyqtSlot(str)
     def on_signal_bringup_btn_clicked(self, cmd: str):
@@ -156,6 +172,51 @@ class MainController(QObject):
                 self._main_model.foxglove_ws_model.start()
             elif status_map[status] == "stopped" and self._main_model.foxglove_ws_model.is_running() is True:
                 self._main_model.foxglove_ws_model.stop()
+                
+                
+    @pyqtSlot(str, dict)
+    def on_signal_log_save_btn_clicked(self, save_path: str, waypoints: dict):
+        """
+        Slot method to handle the save waypoint button click event.
+        """
+        # replace heading with yaw
+        for waypoint in waypoints["waypoints"]:
+            if "heading" in waypoint:
+                waypoint["yaw"] = waypoint.pop("heading")
+                
+        # logger.info(f"Save waypoint button clicked with path: {save_path}")
+        # logger.info(f"Waypoints: {waypoints}")
+        
+        self._main_model.save_yaml_waypoints(
+            waypoints=waypoints,
+            file_path=save_path,
+        )
+        
+    @pyqtSlot(str)
+    def on_signal_load_waypoints_btn_clicked(self, file_path: str):
+        """
+        Slot method to handle the load waypoints button click event.
+        """
+        logger.info(f"Load waypoints button clicked with path: {file_path}")
+        self._main_model.load_yaml_waypoints_file(
+            file_path=file_path,
+        )
+        
+    @pyqtSlot(str)
+    def on_signal_load_params_btn_clicked(self, file_path: str):
+        """
+        Slot method to handle the load params button click event.
+        """
+        logger.info(f"Load params button clicked with path: {file_path}")
+        self._main_model.load_yaml_params_file(
+            file_path=file_path,
+        )
+        
+        
+                
+        
+        
+        
             
             
 
