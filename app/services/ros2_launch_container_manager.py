@@ -6,6 +6,7 @@ from app.services.ros2_launch_container_cfg import CONTAINERS_CFG
 from app.utils.logger import logger
 
 class ROS2LaunchContainerManager(QObject):
+    
     signal_status_updated = pyqtSignal(str, str)  # key, status
     
     _instance = None

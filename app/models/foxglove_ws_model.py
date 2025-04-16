@@ -317,3 +317,12 @@ class FoxgloveWsModel(QObject):
             message (Dict[str, Any]): The message dictionary to send.
         """
         await self._send(message)
+        
+    def is_running(self) -> bool:
+        """
+        Returns whether the WebSocket Model is currently running.
+        
+        Returns:
+            bool: True if the Model is running, False otherwise.
+        """
+        return self._running
