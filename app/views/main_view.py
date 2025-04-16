@@ -1,3 +1,5 @@
+from typing import Dict
+
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -260,8 +262,6 @@ class MainView(QWidget):
                     "font-size: 16px; font-weight: bold; color: green")
             self._is_waiting_for_localization = None
 
-        
-            
     @pyqtSlot(str)
     def on_signal_navigation_container_status(self, status: str):
         """
@@ -287,4 +287,31 @@ class MainView(QWidget):
             self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: green")
             self._is_waiting_for_navigation = None
+            
+            
+    @pyqtSlot(dict)
+    def on_signal_update_health_status(self, status_dict: Dict[str, str]):
+        """
+        Update the health status of a specific item.
+        """
+        logger.debug(f"Health status updated: {status_dict}")
+        for name, status in status_dict.items():
+            self.status_bar.update_status(name, status)
+            
+            
+    @pyqtSlot(dict)
+    def on_signal_gps_fix_received(self, data: dict):
+        # logger.info(f" GPS Fix signal received: {data}")
+        self.multi_panel.waypoints_logger_panel.update_gps_info(
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+        )
+        
+        
+    @pyqtSlot(dict)
+    def on_signal_heading_quat_received(self, data: dict):
+        # logger.info(f" Heading signal received: {data}")
+        self.multi_panel.waypoints_logger_panel.update_heading_info(
+            data=data,
+        )
         

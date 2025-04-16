@@ -5,6 +5,9 @@ from PyQt5.QtCore import (
     pyqtSlot,
     QTimer,
 )
+from PyQt5 import (
+    QtWidgets
+)
 
 
 from app.views import MainView
@@ -18,6 +21,7 @@ class MainController(QObject):
     def __init__(
         self, 
         config: dict,
+        app: QtWidgets.QApplication,
         main_view: MainView, 
         main_model: MainModel,
     ):
@@ -30,6 +34,7 @@ class MainController(QObject):
         """
         super().__init__()
         self._config = config
+        self._app = app
         self._main_view = main_view
         self._main_model = main_model
         
@@ -37,6 +42,8 @@ class MainController(QObject):
             status_interval_ms=1000,
             container_interval_ms=1000,
         )
+        
+        self._app.aboutToQuit.connect(self.on_app_exit)
         
         # Button click signals
         self._main_view.signal_bringup_btn_clicked.connect(
@@ -53,6 +60,27 @@ class MainController(QObject):
         self._main_model.ros2_launch_container_model.signal_container_status_updated.connect(
             self.on_signal_container_status_updated,
         )
+        
+        # Foxglove WebSocket signals
+        self._main_model.foxglove_ws_model.signal_health_status.connect(
+            self._main_view.on_signal_update_health_status,
+        )
+        self._main_model.foxglove_ws_model.signal_gps_fix.connect(
+            self._main_view.on_signal_gps_fix_received,
+        )
+        self._main_model.foxglove_ws_model.signal_heading_quat.connect(
+            self._main_view.on_signal_heading_quat_received,
+        )
+        
+        
+    
+    def on_app_exit(self):
+        """
+        Handles application exit by stopping all containers and quitting the app.
+        """
+        logger.info("Exiting application...")
+        self._main_model.ros2_launch_container_model.remove_all_launch_containers()
+        self._app.quit()
             
     
     @pyqtSlot(str)
@@ -116,16 +144,17 @@ class MainController(QObject):
             "exited": "stopped"
         }
         
+        if status not in status_map:
+            return
+        
         # Update the UI if we have a mapping for this container and status
         if key in container_map and status in status_map:
             container_map[key](status_map[status])
             
         if key == "bringup":
-            if status_map[status] == "started" \
-            and self._main_model.foxglove_ws_model.is_running() is False:
+            if status_map[status] == "started" and self._main_model.foxglove_ws_model.is_running() is False:
                 self._main_model.foxglove_ws_model.start()
-            elif status_map[status] == "stopped" \
-            and self._main_model.foxglove_ws_model.is_running() is True:
+            elif status_map[status] == "stopped" and self._main_model.foxglove_ws_model.is_running() is True:
                 self._main_model.foxglove_ws_model.stop()
             
             

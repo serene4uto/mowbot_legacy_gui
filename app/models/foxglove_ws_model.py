@@ -29,9 +29,9 @@ class FoxgloveWsModel(QObject):
     _instance = None
 
     # PyQt signals for data updates
-    heading_quat_signal = pyqtSignal(dict)
-    gps_fix_signal = pyqtSignal(dict)
-    sensor_status_signal = pyqtSignal(dict)
+    signal_heading_quat = pyqtSignal(dict)
+    signal_gps_fix = pyqtSignal(dict)
+    signal_health_status = pyqtSignal(dict)
     
     @staticmethod
     def get_instance(config: Dict[str, Any]) -> 'FoxgloveWsModel':
@@ -231,7 +231,7 @@ class FoxgloveWsModel(QObject):
                 if imu_data is None:
                     return
                 heading_quat = imu_data.get('orientation', {})
-                self.heading_quat_signal.emit(heading_quat)
+                self.signal_heading_quat.emit(heading_quat)
             elif topic == '/gps/fix':
                 navsatfix_data = decode_navsatfix(payload)
                 if navsatfix_data is None:
@@ -246,11 +246,12 @@ class FoxgloveWsModel(QObject):
                     'longitude': navsatfix_data.get('longitude', 0),
                     'altitude': navsatfix_data.get('altitude', 0),
                 }
-                self.gps_fix_signal.emit(gps_fix)
+                self.signal_gps_fix.emit(gps_fix)
                 logger.info(f"Navsatfix Data: {navsatfix_data}")
             elif topic == '/sensor_status':
                 sensorstatus_data = decode_sensorstatus(payload)
-                self.sensor_status_signal.emit(sensorstatus_data)
+                self.signal_health_status.emit(sensorstatus_data)
+                # logger.info(f"Sensor Status Data: {sensorstatus_data}")
         except struct.error as e:
             logger.error(f"Error decoding binary message: {e}")
         except Exception as e:

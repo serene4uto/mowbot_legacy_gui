@@ -1,5 +1,13 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGroupBox
+from typing import Literal
 
+from PyQt5.QtWidgets import (
+    QWidget, 
+    QHBoxLayout, 
+    QLabel, 
+    QGroupBox
+)
+
+from app.utils.logger import logger
 
 class StatusItem(QWidget):
     def __init__(self, name: str):
@@ -52,3 +60,20 @@ class StatusBarView(QWidget):
 
         self.setLayout(layout)
         self.setFixedHeight(100)
+        
+    
+    def update_status(self, name: str, status: Literal["Inactive", "Active"]):
+        """
+        Update the status of a specific item.
+
+        Args:
+            name (str): The name of the status item to update.
+            status (str): The new status to set.
+        """
+        if name in self.status_item_dict:
+            item = self.status_item_dict[name]
+            item.status_label.setText(status)
+            item.status_label.setStyleSheet(
+                "color: green;" if status == "Active" else "color: red;")
+        else:
+            logger.warning(f"Status item '{name}' not found in status bar.")

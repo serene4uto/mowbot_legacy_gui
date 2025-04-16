@@ -83,6 +83,7 @@ def main():
     
     controller = MainController(
         config=config,
+        app=app,
         main_view=window.main_view,
         main_model=MainModel(
             config=config

@@ -55,12 +55,21 @@ class ROS2LaunchContainerModel(QObject):
                 image=config["image"],
                 name=name,
                 command=config["command"],
-                volumes=config.get("volumes", {}),
-                environment=config.get("environment", {}),
-                network=config.get("network", "host"),
-                detach=True,
-                tty=True
+                privileged=config["privileged"],
+                volumes=config["volumes"],
+                environment=config["environment"],
+                network=config["network_mode"],
+                detach=config["detach"],
+                tty=config["tty"],
             )
+            
+    def create_all_launch_containers(self) -> None:
+        """
+        Creates all launch containers defined in the configuration.
+        """
+        for key in self.containers_config.keys():
+            self.create_launch_container(key=key)
+            logger.info(f"Created container: {key}")
 
     def start_launch_container(self, key: str) -> None:
         container = self.create_launch_container(key)
@@ -107,6 +116,11 @@ class ROS2LaunchContainerModel(QObject):
             logger.info(f"Removed container: {key}")
         except docker.errors.NotFound:
             logger.warning(f"Container not found for removal: {key}")
+            
+    def remove_all_launch_containers(self) -> None:
+        for key in self.containers_config.keys():
+            self.remove_launch_container(key=key)
+            logger.info(f"Removed container: {key}")
 
     # --- Periodic Task Management ---
     def start_periodic_tasks(self, status_interval_ms: int = 1000, container_interval_ms: int = 1000):

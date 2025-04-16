@@ -144,7 +144,6 @@ class WaypointsLoggerPanelView(QWidget):
         layout.addLayout(map_layout)
         self.setLayout(layout) 
         
-        
     # -- UI Update API Methods --
     def update_table_with_logged_waypoint(self, latitude: float, longitude: float, heading: float):
         """
