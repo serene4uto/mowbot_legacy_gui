@@ -316,18 +316,18 @@ class MainView(QWidget):
         
         if not self._is_navigating:
             # Begin navigation process
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setEnabled(False)
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setStyleSheet(
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setEnabled(False)
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: gray")
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setText("...")
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setText("...")
             self.signal_navigation_wp_follow_btn_clicked.emit("start")
             self._is_waiting_for_navigation = "start"
         else:
             # End navigation process
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setEnabled(False)
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setStyleSheet(
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setEnabled(False)
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: gray")
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setText("...")
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setText("...")
             self.signal_navigation_wp_follow_btn_clicked.emit("stop")
             self._is_waiting_for_navigation = "stop"
             
@@ -463,18 +463,18 @@ class MainView(QWidget):
         
         if status == "started" and self._is_waiting_for_navigation == "start":
             self._is_navigating = True
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setText("Stop")
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setEnabled(True)
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setStyleSheet(
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setText("Stop")
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setEnabled(True)
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: red")
             self._is_waiting_for_navigation = None
             
         elif status == "stopped" and self._is_waiting_for_navigation == "stop":
             self._is_navigating = False
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setText("Start")
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setEnabled(True)
-            self.multi_panel.waypoints_navigator_panel.start_nav_wpfl_btn.setStyleSheet(
-                "font-size: 16px; font-weight: bold; color: green")
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setText("Start")
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setEnabled(True)
+            self.multi_panel.waypoints_navigator_panel.option_bar.start_nav_wpfl_btn.setStyleSheet(
+                "font-size: 16px; font-weight: bold; cooption_bar.lor: green")
             self._is_waiting_for_navigation = None
             
             
