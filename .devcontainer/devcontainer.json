@@ -1,9 +1,9 @@
 {
-  "name": "mowbot_legacy_gui",
+  "name": "mowbot_legacy_gui_dev",
   // "image": "python:3.10.12",
   "image": "ghcr.io/serene4uto/mowbot-legacy-gui:latest",
   "runArgs": [
-    "--name", "mowbot_legacy_gui",
+    "--name", "mowbot_legacy_gui_dev",
     "--net", "host",
     "--privileged",
     "-v", "/dev:/dev",
