@@ -3,7 +3,7 @@
 xhost +local:docker
 export DISPLAY=:0
 
-docker run -it --rm \
+docker run -i --rm \
   --name mowbot_legacy_gui \
   --net host \
   --privileged \
