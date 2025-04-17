@@ -114,7 +114,7 @@ setup_desktop_icon() {
         echo "[Desktop Entry]" > "$desktop_file"
         echo "Type=Application" >> "$desktop_file"
         echo "Name=$app_name" >> "$desktop_file"  # Fixed variable name
-        echo "Icon=$RESOURCES_DIR/mowbot_app_icon.jpg" >> "$desktop_file"
+        echo "Icon=$RESOURCES_DIR/mowbot_legacy_icon.jpg" >> "$desktop_file"
         echo "Exec=$command" >> "$desktop_file"
         echo "Terminal=false" >> "$desktop_file"
 
