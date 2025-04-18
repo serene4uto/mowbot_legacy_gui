@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QFileDialog,
 )
+from PyQt5.QtGui import QFont
 from PyQt5.QtCore import pyqtSlot
 from scipy.spatial.transform import Rotation as R
 
@@ -36,32 +37,42 @@ class WaypointsLoggerOptionBarView(QWidget):
         self.table_view.setFixedWidth(200)
         # self.table_view.setFixedHeight(80)
         font = self.table_view.font()
-        font.setPointSize(8)
+        font.setPointSize(12)
         self.table_view.setFont(font)
-        self.table_view.verticalHeader().setDefaultSectionSize(20)
+        self.table_view.verticalHeader().setDefaultSectionSize(30)
+        self.table_view.horizontalHeader().setDefaultSectionSize(30)
         self.table_view.horizontalHeader().setStretchLastSection(True)
         self.table_view.setColumnWidth(0, 60)
         self.table_view.setColumnWidth(1, 60)
         self.table_view.setColumnWidth(2, 40)
         
+        btn_font = QFont()
+        btn_font.setPointSize(12)
+        btn_font.setBold(True)
+        
         # Create buttons.
         self.log_btn = QPushButton('Log')
+        self.log_btn.setFont(btn_font)
         self.log_btn.setFixedWidth(80)
         self.log_btn.setFixedHeight(80)
         
         self.rm_btn = QPushButton('Remove')
+        self.rm_btn.setFont(btn_font)
         self.rm_btn.setFixedWidth(80)
         self.rm_btn.setFixedHeight(80)
         
         self.clear_btn = QPushButton('Clear')
+        self.clear_btn.setFont(btn_font)
         self.clear_btn.setFixedWidth(80)
         self.clear_btn.setFixedHeight(80)
         
-        self.gen_btn = QPushButton('Generate')
+        self.gen_btn = QPushButton('Gen')
+        self.gen_btn.setFont(btn_font)
         self.gen_btn.setFixedWidth(80)
         self.gen_btn.setFixedHeight(80)
 
         self.save_btn = QPushButton('Save')
+        self.save_btn.setFont(btn_font)
         self.save_btn.setFixedWidth(80)
         self.save_btn.setFixedHeight(80)
         
