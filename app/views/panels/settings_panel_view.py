@@ -1,16 +1,9 @@
 from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QGroupBox,
-    QSlider,
-    QPushButton,
-    QFileDialog,
-    
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider,
+    QPushButton, QFileDialog, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
-from app.utils.logger import logger
+from typing import List, Tuple, Dict, Any
 
 
 class SettingSliderItem(QWidget):
@@ -24,125 +17,176 @@ class SettingSliderItem(QWidget):
     ): 
         super().__init__()
         
-        self.label = label
+        self.label_text = label
         self.min = min
         self.max = max
         self.step = step
         
-        # Dynamically calculate scale factor based on step
+        # Calculate scale factor once during initialization
         self.scale_factor = int(1 / self.step)
         
-        self.lb = QLabel(f"{self.label}: {min}")  # Display initial value
-        self.lb.setFixedWidth(fixed_width)
-        self.lb.font().setPointSize(12)
+        self.label = QLabel(f"{self.label_text}: {min:.2f}")
+        self.label.setFixedWidth(fixed_width)
         
-        self.slider = QSlider(
-            orientation=Qt.Horizontal,
-            minimum=int(self.min * self.scale_factor),
-            maximum=int(self.max * self.scale_factor),
-            singleStep=int(self.step * self.scale_factor),
-        )
-        self.slider.setFixedWidth(250) # Set fixed width for the slider
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setFixedWidth(250)
+        self.slider.setMinimum(int(self.min * self.scale_factor))
+        self.slider.setMaximum(int(self.max * self.scale_factor))
+        self.slider.setSingleStep(1)  # Use integer steps internally
+        self.slider.valueChanged.connect(self.update_label)
+        
+        # Apply styles
+        self._apply_styles()
+        self._init_ui()
+
+    def _apply_styles(self):
+        """Apply styles to slider - extracted for clarity"""
         self.slider.setStyleSheet("""
             QSlider::groove:horizontal {
-                height: 20px;  /* Adjust the height of the groove */
-                background: #d3d3d3; /* Groove color */
-                border-radius: 10px; /* Optional rounded corners */
+                height: 20px;
+                background: #d3d3d3;
+                border-radius: 10px;
             }
             QSlider::handle:horizontal {
-                width: 20px;  /* Adjust the width of the handle */
-                height: 40px; /* Adjust the height of the handle */
-                background: #5c5c5c; /* Handle color */
-                border: 1px solid #3c3c3c; /* Optional border */
-                border-radius: 10px; /* Make the handle circular */
-                margin: -10px 0; /* Center the handle in the groove */
+                width: 20px;
+                height: 40px;
+                background: #5c5c5c;
+                border: 1px solid #3c3c3c;
+                border-radius: 10px;
+                margin: -10px 0;
             }
         """)
-        
-        self.slider.valueChanged.connect(self.update_label)  # Connect signal
-        self._init_ui()
 
     def _init_ui(self):
         layout = QHBoxLayout()
-        layout.addWidget(self.lb)
+        layout.addWidget(self.label)
         layout.addSpacing(10)
         layout.addWidget(self.slider)
         layout.addStretch(1)
+        layout.setContentsMargins(0, 0, 0, 0)  # Reduce wasted space
         self.setLayout(layout)
     
     def update_label(self, value):
         """Update the label with the current slider value."""
         scaled_value = value / self.scale_factor
-        formatted_value = f"{scaled_value:.2f}"
-        self.lb.setText(f"{self.label}: {formatted_value}")
+        self.label.setText(f"{self.label_text}: {scaled_value:.2f}")
         
-    def get_value(self):
+    def get_value(self) -> float:
         """Get the current value of the slider."""
         return self.slider.value() / self.scale_factor
     
-    def set_value(self, value):
+    def set_value(self, value: float) -> None:
         """Set the slider to a specific value."""
-        set_value = min(max(value, self.min), self.max)  # Ensure value is within bounds
-        self.update_label(set_value * self.scale_factor)
-        self.slider.setValue(int(set_value * self.scale_factor))
+        clamped_value = min(max(value, self.min), self.max)
+        self.slider.setValue(int(clamped_value * self.scale_factor))
 
 
-class SettingsPanelView(QWidget):
-    
-    signal_load_btn_clicked = pyqtSignal(str) # str: file path
-    signal_save_btn_clicked = pyqtSignal(str) # str: file path
-    
-    # UI Constants
-    SLIDER_LABEL_WIDTH = 300
-    BUTTON_WIDTH = 200
-    BUTTON_HEIGHT = 100
-    
+# Common UI constants - centralized to avoid duplication
+UI_CONSTANTS = {
+    "SLIDER_LABEL_WIDTH": 300,
+    "BUTTON_WIDTH": 200,
+    "BUTTON_HEIGHT": 100,
+}
+
+
+class SettingsTabWidget(QWidget):
     def __init__(
         self,
-        config: dict,
+        param_configs: List[Tuple[str, str, float, float, float]],
     ):
         super().__init__()
         
-        self._config = config
-        self._is_params_loaded = False
-        self.last_full_rams = {}
+        self.params_widgets: Dict[str, SettingSliderItem] = {}
         
-        self._init_slider_params()
-        self._init_buttons()
-        self._init_ui()
-        
-        # Load default parameters
-        default_params_fp = \
-            self._config['mowbot_legacy_data_path'] + '/params/default.yaml'
-        self.signal_load_btn_clicked.emit(default_params_fp)
-    
-    def _init_slider_params(self):
-        """Initialize all parameter sliders with their configurations."""
-        # Parameter definitions - easier to maintain and modify
-        param_configs = [
-            ("lookahead_distance", "Lookahead Distance (m)", 0, 2.0, 0.1),
-            ("lookahead_time", "Lookahead Time (s)", 0, 3.0, 0.1),
-            ("desired_linear_vel", "Desired Linear Velocity (m/s)", 0, 1.0, 0.1),
-            ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.1),
-            ("regulated_linear_scaling_min_speed", "Regulated Linear Scaling Min Speed (m/s)", 0, 1.0, 0.1),
-            ("max_angular_accel", "Max Angular Acceleration (rad/s^2)", 0, 3.2, 0.1),
-            ("min_approach_linear_velocity", "Min Approach Linear Velocity (m/s)", 0, 2.0, 0.05),
-            ("rotate_to_heading_angular_vel", "Rotate to Heading Angular Velocity (rad/s)", 0, 2.0, 0.1),
-            ("rotate_to_heading_min_angle", "Rotate to Heading Min Angle (rad)", 0, 3.14, 0.1),
-        ]
-        
-        self.adjustable_params_widget = {}
-        
+        # Create all sliders based on configuration
         for param_id, label, min_val, max_val, step in param_configs:
             slider = SettingSliderItem(
                 label,
                 min=min_val,
                 max=max_val,
                 step=step,
-                fixed_width=self.SLIDER_LABEL_WIDTH
+                fixed_width=UI_CONSTANTS["SLIDER_LABEL_WIDTH"]
             )
-            setattr(self, f"params_{param_id}", slider)
-            self.adjustable_params_widget[param_id] = slider
+            self.params_widgets[param_id] = slider
+        
+        self._init_ui()
+        
+    def _init_ui(self):
+        params_layout = QVBoxLayout()
+        
+        for widget in self.params_widgets.values():
+            params_layout.addSpacing(20)
+            params_layout.addWidget(widget)
+        
+        params_layout.addStretch(1)
+        self.setLayout(params_layout)
+
+
+class SettingsPanelView(QWidget):
+    signal_load_btn_clicked = pyqtSignal(str)  # str: file path
+    signal_save_btn_clicked = pyqtSignal(str)  # str: file path
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__()
+        
+        self._config = config
+        self.settings_tab = QTabWidget()
+        # increase tab height and font size
+        self.settings_tab.setStyleSheet(
+            """
+            QTabBar::tab {
+                height: 50px;
+                width: 250px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            """
+        )
+        
+        # Create regulated pure pursuit tab
+        self.regulated_pure_pursuit_tab = SettingsTabWidget(
+            param_configs=[
+                ("lookahead_distance", "Lookahead Distance (m)", 0, 2.0, 0.1),
+                ("lookahead_time", "Lookahead Time (s)", 0, 3.0, 0.1),
+                ("desired_linear_vel", "Desired Linear Velocity (m/s)", 0, 1.0, 0.1),
+                ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.1),
+                ("regulated_linear_scaling_min_speed", "Regulated Linear Scaling Min Speed (m/s)", 0, 1.0, 0.1),
+                ("max_angular_accel", "Max Angular Acceleration (rad/s^2)", 0, 3.2, 0.1),
+                ("min_approach_linear_velocity", "Min Approach Linear Velocity (m/s)", 0, 2.0, 0.05),
+                ("rotate_to_heading_angular_vel", "Rotate to Heading Angular Velocity (rad/s)", 0, 2.0, 0.1),
+                ("rotate_to_heading_min_angle", "Rotate to Heading Min Angle (rad)", 0, 3.14, 0.1),
+            ]
+        )
+        
+        self.others_tab = SettingsTabWidget(
+            param_configs=[
+                ("xy_goal_tolerance", "XY Goal Tolerance (m)", 0, 1.0, 0.01),
+                ("yaw_goal_tolerance", "Yaw Goal Tolerance (rad)", 0, 3.14, 0.01),
+                ("movement_time_allowance", "Movement Time Allowance (s)", 0, 20.0, 0.1),
+                ("required_movement_angle", "Required Movement Angle (rad)", 0, 3.14, 0.1),
+                ("required_movement_radius", "Required Movement Radius (m)", 0, 2.0, 0.1),
+                ("failure_tolerance", "Failure Tolerance (s)", 0, 1.0, 0.1),
+                ("min_theta_velocity_threshold", "Min Theta Velocity Threshold (rad/s)", 0, 2.0, 0.1),
+                ("min_x_velocity_threshold", "Min X Velocity Threshold (m/s)", 0, 2.0, 0.1),
+            ]
+        )
+        
+        self.settings_tab.addTab(
+            self.regulated_pure_pursuit_tab,
+            "Regulated Pure Pursuit"
+        )
+        self.settings_tab.addTab(
+            self.others_tab,
+            "Others"
+        )
+        
+        self.settings_tab.setFixedWidth(600)
+        self._init_buttons()
+        self._init_ui()
+        
+        # Load default parameters
+        default_params_fp = f"{self._config['mowbot_legacy_data_path']}/params/default.yaml"
+        self.signal_load_btn_clicked.emit(default_params_fp)
     
     def _init_buttons(self):
         """Initialize buttons with consistent styling."""
@@ -151,8 +195,7 @@ class SettingsPanelView(QWidget):
         
         # Apply consistent styling to buttons
         for btn in [self.params_load_btn, self.params_save_btn]:
-            btn.setFixedWidth(self.BUTTON_WIDTH)
-            btn.setFixedHeight(self.BUTTON_HEIGHT)
+            btn.setFixedSize(UI_CONSTANTS["BUTTON_WIDTH"], UI_CONSTANTS["BUTTON_HEIGHT"])
         
         # Connect button signals
         self.params_load_btn.clicked.connect(self.on_load_btn_clicked)
@@ -161,28 +204,17 @@ class SettingsPanelView(QWidget):
     def _init_ui(self):
         """Initialize the user interface layout."""
         layout = QHBoxLayout()
-        
-        # Parameters group box
-        params_group = QGroupBox("Regulated Pure Pursuit")
-        params_layout = QVBoxLayout()
-        
-        for widget in self.adjustable_params_widget.values():
-            params_layout.addWidget(widget)
-            params_layout.addSpacing(10)
-        
-        params_layout.addStretch(1)
-        params_group.setLayout(params_layout)
-        layout.addWidget(params_group)
+        layout.addWidget(self.settings_tab)
         
         # Buttons layout
-        layout.addStretch(1)
         btn_layout = QVBoxLayout()
         btn_layout.addWidget(self.params_load_btn)
         btn_layout.addSpacing(10)
         btn_layout.addWidget(self.params_save_btn)
         btn_layout.addStretch(1)
-        layout.addLayout(btn_layout)
         
+        layout.addStretch(1)
+        layout.addLayout(btn_layout)
         self.setLayout(layout)
     
     def on_load_btn_clicked(self):
@@ -190,7 +222,7 @@ class SettingsPanelView(QWidget):
         load_file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Parameters File",
-            self._config['mowbot_legacy_data_path'] + '/params',
+            f"{self._config['mowbot_legacy_data_path']}/params",
             "YAML Files (*.yaml);;All Files (*)",
         )
         if load_file_path:
@@ -201,8 +233,10 @@ class SettingsPanelView(QWidget):
         save_file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Select Parameters File",
-            self._config['mowbot_legacy_data_path'] + '/params',
+            f"{self._config['mowbot_legacy_data_path']}/params",
             "YAML Files (*.yaml);;All Files (*)",
         )
         if save_file_path:
             self.signal_save_btn_clicked.emit(save_file_path)
+            
+    
