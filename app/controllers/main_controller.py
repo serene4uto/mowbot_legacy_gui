@@ -73,6 +73,12 @@ class MainController(QObject):
         self._main_view.signal_restart_btn_clicked.connect(
             self.on_signal_restart_btn_clicked,
         )
+        self._main_view.signal_settings_load_btn_clicked.connect(
+            self.on_signal_settings_load_btn_clicked,
+        )
+        self._main_view.signal_settings_save_btn_clicked.connect(
+            self.on_signal_settings_save_btn_clicked,
+        )
         
         # Container status update signals
         self._main_model.ros2_launch_container_model.signal_container_status_updated.connect(
@@ -96,6 +102,9 @@ class MainController(QObject):
         )
         self._main_model.signal_on_params_loaded.connect(
             self._main_view.on_signal_params_loaded,
+        )
+        self._main_model.signal_on_settings_param_loaded.connect(
+            self._main_view.on_signal_settings_param_loaded,
         )
         
     @pyqtSlot()
@@ -232,6 +241,35 @@ class MainController(QObject):
         logger.info(f"Load params button clicked with path: {file_path}")
         self._main_model.load_yaml_params_file(
             file_path=file_path,
+        )
+        
+    @pyqtSlot(str)
+    def on_signal_settings_load_btn_clicked(self, file_path: str):
+        """
+        Slot method to handle the load settings button click event.
+        """
+        logger.info(f"Load settings button clicked with path: {file_path}")
+        yaml_data = self._main_model.load_yaml_param_settings_file(
+            file_path=file_path,
+        )
+        
+        if yaml_data is None:
+            logger.error(f"Error loading YAML file {file_path}")
+            return None
+        
+        self._main_model.signal_on_settings_param_loaded.emit(
+            file_path, yaml_data,
+        )
+        
+    @pyqtSlot(str, dict)
+    def on_signal_settings_save_btn_clicked(self, file_path: str, yaml_data: dict):
+        """
+        Slot method to handle the save settings button click event.
+        """
+        logger.info(f"Save settings button clicked with path: {file_path} and data: {yaml_data}")
+        self._main_model.save_yaml_param_settings_file(
+            file_path=file_path,
+            yaml_data=yaml_data,
         )
         
         

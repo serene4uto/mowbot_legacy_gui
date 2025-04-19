@@ -24,7 +24,9 @@ class MultiPanelView(QWidget):
         self.waypoints_navigator_panel = WaypointsNavigatorPanelView(
             config=self._config
         )  
-        self.settings_panel = SettingsPanelView()                                
+        self.settings_panel = SettingsPanelView(
+            config=self._config
+        )                                
 
         # Add panels to the stacked widget.
         self.stacked_widget.addWidget(self.waypoints_logger_panel)
