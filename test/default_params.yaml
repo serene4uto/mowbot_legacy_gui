@@ -1,285 +1,312 @@
-behavior_server:
-  ros__parameters:
-    assisted_teleop:
-      plugin: nav2_behaviors/AssistedTeleop
-    backup:
-      plugin: nav2_behaviors/BackUp
-    behavior_plugins:
-    - spin
-    - backup
-    - drive_on_heading
-    - assisted_teleop
-    - wait
-    costmap_topic: local_costmap/costmap_raw
-    cycle_frequency: 10.0
-    drive_on_heading:
-      plugin: nav2_behaviors/DriveOnHeading
-    footprint_topic: local_costmap/published_footprint
-    global_frame: odom
-    max_rotational_vel: 1.5
-    min_rotational_vel: 1.2
-    robot_base_frame: base_footprint
-    rotational_acc_lim: 3.2
-    simulate_ahead_time: 2.0
-    spin:
-      plugin: nav2_behaviors/Spin
-    transform_tolerance: 0.1
-    use_sim_time: false
-    wait:
-      plugin: nav2_behaviors/Wait
 bt_navigator:
   ros__parameters:
+    global_frame: map
+    robot_base_frame: base_footprint
+    odom_topic: /odom/local
     bt_loop_duration: 10
     default_server_timeout: 20
-    global_frame: map
-    navigate_through_poses:
-      plugin: nav2_bt_navigator/NavigateThroughPosesNavigator
-    navigate_to_pose:
-      plugin: nav2_bt_navigator/NavigateToPoseNavigator
-    navigators:
-    - navigate_to_pose
-    - navigate_through_poses
-    odom_topic: /odom/local
-    plugin_lib_names:
-    - nav2_compute_path_to_pose_action_bt_node
-    - nav2_compute_path_through_poses_action_bt_node
-    - nav2_smooth_path_action_bt_node
-    - nav2_follow_path_action_bt_node
-    - nav2_spin_action_bt_node
-    - nav2_back_up_action_bt_node
-    - nav2_drive_on_heading_bt_node
-    - nav2_assisted_teleop_action_bt_node
-    - nav2_recovery_node_bt_node
-    - nav2_goal_updater_node_bt_node
-    - nav2_truncate_path_action_bt_node
-    - nav2_truncate_path_local_action_bt_node
-    - nav2_navigate_through_poses_action_bt_node
-    - nav2_navigate_to_pose_action_bt_node
-    - nav2_remove_passed_goals_action_bt_node
-    - nav2_clear_costmap_service_bt_node
-    - nav2_is_stuck_condition_bt_node
-    - nav2_is_path_valid_condition_bt_node
-    - nav2_goal_reached_condition_bt_node
-    - nav2_goal_updated_condition_bt_node
-    - nav2_globally_updated_goal_condition_bt_node
-    - nav2_initial_pose_received_condition_bt_node
-    - nav2_transform_available_condition_bt_node
-    - nav2_is_battery_low_condition_bt_node
-    - nav2_is_battery_charging_condition_bt_node
-    - nav2_time_expired_condition_bt_node
-    - nav2_path_expiring_timer_condition
-    - nav2_distance_traveled_condition_bt_node
-    - nav2_planner_selector_bt_node
-    - nav2_controller_selector_bt_node
-    - nav2_goal_checker_selector_bt_node
-    - nav2_rate_controller_bt_node
-    - nav2_distance_controller_bt_node
-    - nav2_speed_controller_bt_node
-    - nav2_pipeline_sequence_bt_node
-    - nav2_round_robin_node_bt_node
-    - nav2_controller_cancel_bt_node
-    - nav2_wait_cancel_bt_node
-    - nav2_spin_cancel_bt_node
-    - nav2_back_up_cancel_bt_node
-    - nav2_assisted_teleop_cancel_bt_node
-    - nav2_drive_on_heading_cancel_bt_node
-    - nav2_wait_action_bt_node
-    - nav2_reinitialize_global_localization_service_bt_node
-    - nav2_single_trigger_bt_node
-    - nav2_goal_updated_controller_bt_node
-    - nav2_path_longer_on_approach_bt_node
-    robot_base_frame: base_footprint
     transform_tolerance: 0.1
     wait_for_service_timeout: 1000
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator/NavigateThroughPosesNavigator"
+    plugin_lib_names:
+    # Action Nodes
+      # path planning
+      - nav2_compute_path_to_pose_action_bt_node        # Computes path to a specified pose.
+      - nav2_compute_path_through_poses_action_bt_node  # Computes path through multiple poses.
+      - nav2_smooth_path_action_bt_node                 # Smooths the planned path for optimal travel.
+      # path following
+      - nav2_follow_path_action_bt_node                 # Controls the robot to follow the computed path.
+      # robot movement
+      - nav2_spin_action_bt_node                        # Executes a spin action to reorient the robot.
+      - nav2_back_up_action_bt_node                     # Moves the robot backward safely.
+      - nav2_drive_on_heading_bt_node                   # Drives the robot in a specified direction.
+      # recovery and teleoperation
+      - nav2_assisted_teleop_action_bt_node             # Allows teleoperation with autonomous assistance.
+      - nav2_recovery_node_bt_node                      # Executes a recovery action.
+      # goal and path updates
+      - nav2_goal_updater_node_bt_node                  # Updates the navigation goal.
+      - nav2_truncate_path_action_bt_node               # Truncates the path for optimized navigation.
+      - nav2_truncate_path_local_action_bt_node         # Locally truncates the path.
+      - nav2_navigate_through_poses_action_bt_node      # Navigates through multiple poses in sequence.
+      - nav2_navigate_to_pose_action_bt_node            # Navigates to a specific pose.
+      - nav2_remove_passed_goals_action_bt_node         # Removes goals that have already been passed.
+      # clear obstacles
+      - nav2_clear_costmap_service_bt_node              # Clears obstacles from the costmap.
+    # Condition Nodes
+      # status checks
+      - nav2_is_stuck_condition_bt_node                 # Checks if the robot is stuck.
+      - nav2_is_path_valid_condition_bt_node            # Verifies if the current path is still valid.
+      - nav2_goal_reached_condition_bt_node             # Determines if the robot has reached its goal.
+      - nav2_goal_updated_condition_bt_node             # Checks if the goal has been updated.
+      - nav2_globally_updated_goal_condition_bt_node    # Checks for a global goal update.
+      # localization and transforms
+      - nav2_initial_pose_received_condition_bt_node    # Checks if the initial pose has been received.
+      - nav2_transform_available_condition_bt_node      # Checks if required transforms are available.
+      # battery monitoring
+      - nav2_is_battery_low_condition_bt_node           # Checks if the robot's battery level is low.
+      - nav2_is_battery_charging_condition_bt_node      # Checks if the battery is charging.
+      # time and distance monitoring
+      - nav2_time_expired_condition_bt_node             # Checks if the defined time has expired.
+      - nav2_path_expiring_timer_condition              # Checks if the path is about to expire.
+      - nav2_distance_traveled_condition_bt_node        # Checks if a certain distance has been traveled.
+    # Controller and Selector Nodes
+      # controller selection
+      - nav2_planner_selector_bt_node                   # Selects the appropriate planner.
+      - nav2_controller_selector_bt_node                # Selects the appropriate controller.
+      - nav2_goal_checker_selector_bt_node              # Selects the appropriate goal checker.
+      # behavior controllers
+      - nav2_rate_controller_bt_node                    # Controls behavior based on rate conditions.
+      - nav2_distance_controller_bt_node                # Controls behavior based on distance conditions.
+      - nav2_speed_controller_bt_node                   # Controls behavior based on speed conditions.
+      # pipeline management
+      - nav2_pipeline_sequence_bt_node                  # Manages sequence execution in the BT pipeline.
+      - nav2_round_robin_node_bt_node                   # Manages BT sequence in a round-robin fashion.
+    # Cancel Nodes
+      - nav2_controller_cancel_bt_node                  # Cancels the current controller action.
+      - nav2_wait_cancel_bt_node                        # Cancels the wait action.
+      - nav2_spin_cancel_bt_node                        # Cancels the spin action.
+      - nav2_back_up_cancel_bt_node                     # Cancels the back-up action.
+      - nav2_assisted_teleop_cancel_bt_node             # Cancels the assisted teleoperation action.
+      - nav2_drive_on_heading_cancel_bt_node            # Cancels the drive on heading action.
+    # Other Nodes
+      - nav2_wait_action_bt_node                        # Pauses the robot at its current position.
+      - nav2_reinitialize_global_localization_service_bt_node # Reinitializes global localization.
+      - nav2_single_trigger_bt_node                     # Single-use trigger for BT conditions.
+      - nav2_goal_updated_controller_bt_node            # Updates the goal in the BT controller.
+      - nav2_path_longer_on_approach_bt_node            # Checks if path length increases when approaching.
+
+
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
-    use_sim_time: false
+    use_sim_time: False
+
+
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
-    use_sim_time: false
+    use_sim_time: False
+
+
 controller_server:
   ros__parameters:
-    FollowPath:
-      approach_velocity_scaling_dist: 1.0
-      cost_scaling_dist: 0.3
-      cost_scaling_gain: 1.0
-      desired_linear_vel: 0.5
-      inflation_cost_scaling_factor: 3.0
-      lookahead_dist: 1.2
-      lookahead_time: 1.5
-      max_allowed_time_to_collision_up_to_carrot: 1.0
-      max_angular_accel: 3.2
-      max_lookahead_dist: 0.9
-      max_robot_pose_search_dist: 10.0
-      min_approach_linear_velocity: 0.05
-      min_lookahead_dist: 0.3
-      plugin: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
-      regulated_linear_scaling_min_radius: 0.9
-      regulated_linear_scaling_min_speed: 0.25
-      rotate_to_heading_angular_vel: 1.8
-      rotate_to_heading_min_angle: 0.785
-      transform_tolerance: 0.1
-      use_collision_detection: true
-      use_cost_regulated_linear_velocity_scaling: false
-      use_interpolation: false
-      use_regulated_linear_velocity_scaling: true
-      use_rotate_to_heading: true
-      use_velocity_scaled_lookahead_dist: false
+    # https://github.com/ros-navigation/navigation2/blob/humble/nav2_controller/src/controller_server.cpp
+    # https://docs.nav2.org/configuration/packages/configuring-controller-server.html             
+    use_sim_time: False
     controller_frequency: 20.0
-    controller_plugins:
-    - FollowPath
-    failure_tolerance: 0.3
-    general_goal_checker:
-      plugin: nav2_controller::SimpleGoalChecker
-      stateful: true
-      xy_goal_tolerance: 0.5
-      yaw_goal_tolerance: 0.25
-    goal_checker_plugins:
-    - general_goal_checker
-    min_theta_velocity_threshold: 0.001
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+    controller_plugins: ["FollowPath"]     
+
+    # Progress checker parameters
     progress_checker:
-      movement_time_allowance: 15.0
-      plugin: nav2_controller::PoseProgressChecker
-      required_movement_angle: 0.1
-      required_movement_radius: 0.1
-    progress_checker_plugin: progress_checker
-    use_sim_time: false
-global_costmap:
-  global_costmap:
-    ros__parameters:
-      always_send_full_costmap: true
-      footprint: '[ [-0.7, 0.7], [0.7, 0.7], [0.7, -0.7], [-0.7, -0.7] ]'
-      global_frame: map
-      height: 50
-      inflation_layer:
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
-        plugin: nav2_costmap_2d::InflationLayer
-      obstacle_layer:
-        enabled: true
-        observation_sources: scan
-        plugin: nav2_costmap_2d::ObstacleLayer
-        scan:
-          clearing: true
-          data_type: LaserScan
-          marking: true
-          max_obstacle_height: 2.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          topic: /scan
-      plugins:
-      - obstacle_layer
-      - inflation_layer
-      publish_frequency: 1.0
-      robot_base_frame: base_footprint
-      rolling_window: true
-      track_unknown_space: true
-      update_frequency: 1.0
-      use_sim_time: false
-      width: 50
+      plugin: "nav2_controller::PoseProgressChecker"
+      required_movement_radius: 0.1 # meters
+      required_movement_angle: 0.1 # 
+      movement_time_allowance: 15.0 # seconds
+
+    # Goal checker parameters
+    general_goal_checker: #TODO: tune these values
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.5   # meters
+      yaw_goal_tolerance: 0.25   # radians
+
+
+    FollowPath: #TODO: tune these values
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      lookahead_dist: 1.2
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.8
+      transform_tolerance: 0.1
+      use_velocity_scaled_lookahead_dist: false
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 1.0
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: true
+      use_cost_regulated_linear_velocity_scaling: false
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      rotate_to_heading_min_angle: 0.785
+      max_angular_accel: 3.2
+      max_robot_pose_search_dist: 10.0
+      use_interpolation: false
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 3.0
+
+
 local_costmap:
   local_costmap:
     ros__parameters:
-      always_send_full_costmap: true
-      footprint: '[ [-0.7, 0.7], [0.7, 0.7], [0.7, -0.7], [-0.7, -0.7] ]'
-      global_frame: odom
-      height: 3
-      inflation_layer:
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
-        plugin: nav2_costmap_2d::InflationLayer
-      obstacle_layer:
-        enabled: true
-        observation_sources: scan
-        plugin: nav2_costmap_2d::ObstacleLayer
-        scan:
-          clearing: true
-          data_type: LaserScan
-          marking: true
-          max_obstacle_height: 2.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          topic: /scan
-      plugins:
-      - obstacle_layer
-      - inflation_layer
+      use_sim_time: False
+      update_frequency: 5.0
       publish_frequency: 2.0
-      resolution: 0.05
+      global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
-      update_frequency: 5.0
-      use_sim_time: false
       width: 3
-planner_server:
+      height: 3
+      resolution: 0.05
+      # footprint: "[ [-0.75, 0.75], [0.75, 0.75], [0.75, -0.75], [-0.75, -0.75] ]"  
+      footprint: "[ [-0.7, 0.7], [0.7, 0.7], [0.7, -0.7], [-0.7, -0.7] ]"  
+      # footprint: "[ [-0.6, 0.6], [0.6, 0.6], [0.6, -0.6], [-0.6, -0.6] ]"  
+      plugins: ["obstacle_layer", "inflation_layer"]
+      
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+
+      always_send_full_costmap: True
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: False
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: map
+      robot_base_frame: base_footprint
+      # footprint: "[ [-0.75, 0.75], [0.75, 0.75], [0.75, -0.75], [-0.75, -0.75] ]"  
+      footprint: "[ [-0.7, 0.7], [0.7, 0.7], [0.7, -0.7], [-0.7, -0.7] ]"  
+      # footprint: "[ [-0.6, 0.6], [0.6, 0.6], [0.6, -0.6], [-0.6, -0.6] ]"  
+      rolling_window: True                 
+      width: 50                            
+      height: 50                           
+      track_unknown_space: true
+      plugins: ["obstacle_layer", "inflation_layer"]
+      
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+      always_send_full_costmap: True
+
+
+planner_server: 
   ros__parameters:
-    GridBased:
-      allow_unknown: true
-      plugin: nav2_navfn_planner/NavfnPlanner
-      tolerance: 0.5
+    # https://docs.nav2.org/configuration/packages/configuring-navfn.html#parameters
+    use_sim_time: False
+    expected_planner_frequency: 20.0
+    planner_plugins: ["GridBased"]
+    GridBased: #TODO: tune these values
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5 # meters
       use_astar: false
       use_final_approach_orientation: false
-    expected_planner_frequency: 20.0
-    planner_plugins:
-    - GridBased
-    use_sim_time: false
-robot_state_publisher:
-  ros__parameters:
-    use_sim_time: false
+      allow_unknown: true  
+
+
 smoother_server:
   ros__parameters:
+    use_sim_time: False
+    smoother_plugins: ["simple_smoother"]
     costmap_topic: global_costmap/costmap_raw
     footprint_topic: global_costmap/published_footprint
     robot_base_frame: base_footprint
     simple_smoother:
-      do_refinement: true
-      max_its: 1000
-      plugin: nav2_smoother::SimpleSmoother
+      plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
-    smoother_plugins:
-    - simple_smoother
-    use_sim_time: false
-velocity_smoother:
+      max_its: 1000
+      do_refinement: True
+
+
+behavior_server:
   ros__parameters:
-    deadband_velocity:
-    - 0.0
-    - 0.0
-    - 0.0
-    feedback: OPEN_LOOP
-    max_accel:
-    - 2.5
-    - 0.0
-    - 3.2
-    max_decel:
-    - -2.5
-    - 0.0
-    - -3.2
-    max_velocity:
-    - 1.0
-    - 0.0
-    - 1.8
-    min_velocity:
-    - -1.0
-    - 0.0
-    - -1.8
-    odom_duration: 0.1
-    odom_topic: odometry/filtered
-    scale_velocities: false
-    smoothing_frequency: 20.0
-    use_sim_time: false
-    velocity_timeout: 1.0
+    use_sim_time: False
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    assisted_teleop:
+      plugin: "nav2_behaviors/AssistedTeleop"
+    global_frame: odom
+    robot_base_frame: base_footprint
+    transform_tolerance: 0.1
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.5
+    min_rotational_vel: 1.2
+    rotational_acc_lim: 3.2
+
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: False
+
+
 waypoint_follower:
   ros__parameters:
+    use_sim_time: False
     loop_rate: 20
     stop_on_failure: false
-    use_sim_time: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
-      enabled: true
-      plugin: nav2_waypoint_follower::WaitAtWaypoint
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
       waypoint_pause_duration: 1
-    waypoint_task_executor_plugin: wait_at_waypoint
+
+velocity_smoother:
+  ros__parameters: # TODO: tune these values
+    # https://docs.nav2.org/configuration/packages/configuring-velocity-smoother.html
+    use_sim_time: False
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: "OPEN_LOOP"
+    max_velocity: [1.0, 0.0, 1.8]
+    min_velocity: [-1.0, 0.0, -1.8]
+    max_accel: [2.5, 0.0, 3.2]
+    max_decel: [-2.5, 0.0, -3.2]
+    odom_topic: "odometry/filtered" # only works if in CLOSED_LOOP
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
