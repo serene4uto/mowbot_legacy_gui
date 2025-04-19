@@ -45,7 +45,7 @@ class MainView(QWidget):
     signal_restart_btn_clicked = pyqtSignal()
     
     signal_settings_load_btn_clicked = pyqtSignal(str)  # str: file path
-    signal_settings_save_btn_clicked = pyqtSignal(str)  # str: file path
+    signal_settings_save_btn_clicked = pyqtSignal(str, dict)  # str: file path, dict: yaml data
     
     def __init__(self, config):
         super().__init__()
@@ -237,6 +237,8 @@ class MainView(QWidget):
             self.on_settings_load_btn_clicked)
         self.multi_panel.settings_panel.params_save_btn.clicked.connect(
             self.on_settings_save_btn_clicked)
+        self.multi_panel.settings_panel.params_sync_btn.clicked.connect(
+            self.on_settings_sync_btn_clicked)
         
     def on_exit_btn_clicked(self):
         """Forward the exit button event."""
@@ -404,9 +406,22 @@ class MainView(QWidget):
     def on_settings_save_btn_clicked(self):
         """Forward the settings save button event."""
         save_file_path = self.multi_panel.settings_panel.prompt_file_dialog_for_save()
+        yaml_data = self.multi_panel.settings_panel.get_params()
         if not save_file_path:
             return
-        self.signal_settings_save_btn_clicked.emit(save_file_path)
+        if not yaml_data:
+            logger.warning("No data to save.")
+            return
+        self.signal_settings_save_btn_clicked.emit(
+            save_file_path, 
+            yaml_data
+        )
+        
+    def on_settings_sync_btn_clicked(self):
+        """Forward the settings sync button event."""
+        self.signal_settings_load_btn_clicked.emit(
+            self.multi_panel.settings_panel.sync_params_file_path
+        )
         
     @pyqtSlot(str)
     def on_signal_bringup_container_status(self, status: str):

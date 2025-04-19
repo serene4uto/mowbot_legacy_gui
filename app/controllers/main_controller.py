@@ -261,7 +261,7 @@ class MainController(QObject):
             file_path, yaml_data,
         )
         
-    @pyqtSlot(str)
+    @pyqtSlot(str, dict)
     def on_signal_settings_save_btn_clicked(self, file_path: str, yaml_data: dict):
         """
         Slot method to handle the save settings button click event.

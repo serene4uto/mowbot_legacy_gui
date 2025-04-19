@@ -116,6 +116,9 @@ class MainModel(QObject):
         return yaml_data
     
     def save_yaml_param_settings_file(self, file_path: str, yaml_data: dict):
+        # check if file path has .yaml extension
+        if not file_path.endswith('.yaml'):
+            file_path += '.yaml'
         with open(file_path, 'w') as file:
             yaml.dump(yaml_data, file)
         logger.info(f"YAML file saved to {file_path}")

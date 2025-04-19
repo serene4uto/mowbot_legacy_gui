@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QFileDialog, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5 import QtGui
 from typing import List, Tuple, Dict, Any
 
 from app.utils.logger import logger
@@ -126,12 +127,14 @@ class SettingsTabWidget(QWidget):
 class SettingsPanelView(QWidget):
 
     signal_load_btn_clicked = pyqtSignal(str)  # str: file path
-    signal_save_btn_clicked = pyqtSignal(str)  # str: file path
+    signal_save_btn_clicked = pyqtSignal(str, dict)  # str: file path, dict: params
     
     def __init__(self, config: Dict[str, Any]):
         super().__init__()
         
         self._config = config
+        self.full_params = None
+        
         self.settings_tab = QTabWidget()
         # increase tab height and font size
         self.settings_tab.setStyleSheet(
@@ -151,12 +154,12 @@ class SettingsPanelView(QWidget):
                 ("lookahead_dist", "Lookahead Distance (m)", 0, 2.0, 0.1),
                 ("lookahead_time", "Lookahead Time (s)", 0, 3.0, 0.1),
                 ("desired_linear_vel", "Desired Linear Velocity (m/s)", 0, 1.0, 0.1),
-                ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.1),
-                ("regulated_linear_scaling_min_speed", "Regulated Linear Scaling Min Speed (m/s)", 0, 1.0, 0.1),
-                ("max_angular_accel", "Max Angular Acceleration (rad/s^2)", 0, 3.2, 0.1),
+                ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.01),
+                ("regulated_linear_scaling_min_speed", "Regulated Linear Scaling Min Speed (m/s)", 0, 1.0, 0.01),
+                ("max_angular_accel", "Max Angular Acceleration (rad/s^2)", 0, 3.2, 0.01),
                 ("min_approach_linear_velocity", "Min Approach Linear Velocity (m/s)", 0, 2.0, 0.05),
-                ("rotate_to_heading_angular_vel", "Rotate to Heading Angular Velocity (rad/s)", 0, 2.0, 0.1),
-                ("rotate_to_heading_min_angle", "Rotate to Heading Min Angle (rad)", 0, 3.14, 0.1),
+                ("rotate_to_heading_angular_vel", "Rotate to Heading Angular Velocity (rad/s)", 0, 2.0, 0.01),
+                ("rotate_to_heading_min_angle", "Rotate to Heading Min Angle (rad)", 0, 3.14, 0.01),
             ]
         )
         
@@ -167,9 +170,9 @@ class SettingsPanelView(QWidget):
                 ("movement_time_allowance", "Movement Time Allowance (s)", 0, 20.0, 0.1),
                 ("required_movement_angle", "Required Movement Angle (rad)", 0, 3.14, 0.1),
                 ("required_movement_radius", "Required Movement Radius (m)", 0, 2.0, 0.1),
-                ("failure_tolerance", "Failure Tolerance (s)", 0, 1.0, 0.1),
-                ("min_theta_velocity_threshold", "Min Theta Velocity Threshold (rad/s)", 0, 2.0, 0.1),
-                ("min_x_velocity_threshold", "Min X Velocity Threshold (m/s)", 0, 2.0, 0.1),
+                # ("failure_tolerance", "Failure Tolerance (s)", 0, 1.0, 0.1),
+                # ("min_theta_velocity_threshold", "Min Theta Velocity Threshold (rad/s)", 0, 2.0, 0.1),
+                # ("min_x_velocity_threshold", "Min X Velocity Threshold (m/s)", 0, 2.0, 0.1),
             ]
         )
         
@@ -187,17 +190,25 @@ class SettingsPanelView(QWidget):
         self._init_ui()
         
         # Load default parameters
-        default_params_fp = f"{self._config['mowbot_legacy_data_path']}/params/default.yaml"
-        self.signal_load_btn_clicked.emit(default_params_fp)
-           
+        self.sync_params_file_path = \
+            f"{self._config['mowbot_legacy_data_path']}/__params__.yaml"
+    
     def _init_buttons(self):
         """Initialize buttons with consistent styling."""
+        btn_font = QtGui.QFont()
+        btn_font.setPointSize(12)
+        btn_font.setBold(True)
+        btn_font.setWeight(75)
+        
+        self.params_sync_btn = QPushButton("Sync")
         self.params_load_btn = QPushButton("Load")
         self.params_save_btn = QPushButton("Save")
         
+        
         # Apply consistent styling to buttons
-        for btn in [self.params_load_btn, self.params_save_btn]:
+        for btn in [self.params_sync_btn, self.params_load_btn, self.params_save_btn]:
             btn.setFixedSize(UI_CONSTANTS["BUTTON_WIDTH"], UI_CONSTANTS["BUTTON_HEIGHT"])
+            btn.setFont(btn_font)
         
     def _init_ui(self):
         """Initialize the user interface layout."""
@@ -206,6 +217,8 @@ class SettingsPanelView(QWidget):
         
         # Buttons layout
         btn_layout = QVBoxLayout()
+        btn_layout.addWidget(self.params_sync_btn)
+        btn_layout.addSpacing(10)
         btn_layout.addWidget(self.params_load_btn)
         btn_layout.addSpacing(10)
         btn_layout.addWidget(self.params_save_btn)
@@ -239,8 +252,10 @@ class SettingsPanelView(QWidget):
         """Update the load parameters with the given YAML data."""
         # logger.info(f"Updating load parameters with data: {yaml_data}")
         
+        self.full_params = yaml_data
+        
         params_widgets = self.regulated_pure_pursuit_tab.params_widgets
-        rpp_data = yaml_data['controller_server']['ros__parameters']['FollowPath']
+        rpp_data = self.full_params['controller_server']['ros__parameters']['FollowPath']
         logger.info(f"Updating load parameters with data: {rpp_data}")
         params_widgets["lookahead_dist"].set_value(rpp_data['lookahead_dist'])
         params_widgets["lookahead_time"].set_value(rpp_data['lookahead_time'])
@@ -253,19 +268,55 @@ class SettingsPanelView(QWidget):
         params_widgets["rotate_to_heading_min_angle"].set_value(rpp_data['rotate_to_heading_min_angle'])
         
         params_widgets = self.others_tab.params_widgets
-        others_data = yaml_data['controller_server']['ros__parameters']['general_goal_checker']
+        others_data = self.full_params['controller_server']['ros__parameters']['general_goal_checker']
         params_widgets["xy_goal_tolerance"].set_value(others_data['xy_goal_tolerance'])
         params_widgets["yaw_goal_tolerance"].set_value(others_data['yaw_goal_tolerance'])
         
-        others_data = yaml_data['controller_server']['ros__parameters']['progress_checker']
+        others_data = self.full_params['controller_server']['ros__parameters']['progress_checker']
         params_widgets["movement_time_allowance"].set_value(others_data['movement_time_allowance'])
         params_widgets["required_movement_angle"].set_value(others_data['required_movement_angle'])
         params_widgets["required_movement_radius"].set_value(others_data['required_movement_radius'])
         
-        others_data = yaml_data['controller_server']['ros__parameters']
-        params_widgets["failure_tolerance"].set_value(others_data['failure_tolerance'])
-        params_widgets["min_theta_velocity_threshold"].set_value(others_data['min_theta_velocity_threshold'])
-        params_widgets["min_x_velocity_threshold"].set_value(others_data['min_x_velocity_threshold'])
+        # others_data = self.full_params['controller_server']['ros__parameters']
+        # params_widgets["failure_tolerance"].set_value(others_data['failure_tolerance'])
+        # params_widgets["min_theta_velocity_threshold"].set_value(others_data['min_theta_velocity_threshold'])
+        # params_widgets["min_x_velocity_threshold"].set_value(others_data['min_x_velocity_threshold'])
+    
+    def get_params(self):
+        if self.full_params is None:
+            logger.error("No parameters loaded. Cannot get params.")
+            return None
+        
+        params_widgets = self.regulated_pure_pursuit_tab.params_widgets 
+        rpp_data = self.full_params['controller_server']['ros__parameters']['FollowPath']
+        rpp_data['lookahead_dist'] = params_widgets["lookahead_dist"].get_value()
+        rpp_data['lookahead_time'] = params_widgets["lookahead_time"].get_value()
+        rpp_data['desired_linear_vel'] = params_widgets["desired_linear_vel"].get_value()
+        rpp_data['regulated_linear_scaling_min_radius'] = params_widgets["regulated_linear_scaling_min_radius"].get_value()
+        rpp_data['regulated_linear_scaling_min_speed'] = params_widgets["regulated_linear_scaling_min_speed"].get_value()
+        rpp_data['max_angular_accel'] = params_widgets["max_angular_accel"].get_value()
+        rpp_data['min_approach_linear_velocity'] = params_widgets["min_approach_linear_velocity"].get_value()
+        rpp_data['rotate_to_heading_angular_vel'] = params_widgets["rotate_to_heading_angular_vel"].get_value()
+        rpp_data['rotate_to_heading_min_angle'] = params_widgets["rotate_to_heading_min_angle"].get_value()
+        self.full_params['controller_server']['ros__parameters']['FollowPath'] = rpp_data # reupdate
+        params_widgets = self.others_tab.params_widgets
+        others_data = self.full_params['controller_server']['ros__parameters']['general_goal_checker']
+        others_data['xy_goal_tolerance'] = params_widgets["xy_goal_tolerance"].get_value()
+        others_data['yaw_goal_tolerance'] = params_widgets["yaw_goal_tolerance"].get_value() 
+        self.full_params['controller_server']['ros__parameters']['general_goal_checker'] = others_data # reupdate
+        others_data = self.full_params['controller_server']['ros__parameters']['progress_checker']
+        others_data['movement_time_allowance'] = params_widgets["movement_time_allowance"].get_value()
+        others_data['required_movement_angle'] = params_widgets["required_movement_angle"].get_value()
+        others_data['required_movement_radius'] = params_widgets["required_movement_radius"].get_value()
+        self.full_params['controller_server']['ros__parameters']['progress_checker'] = others_data # reupdate
+        # others_data = self.full_params['controller_server']['ros__parameters']
+        # others_data['failure_tolerance'] = params_widgets["failure_tolerance"].get_value()
+        # others_data['min_theta_velocity_threshold'] = params_widgets["min_theta_velocity_threshold"].get_value()
+        # others_data['min_x_velocity_threshold'] = params_widgets["min_x_velocity_threshold"].get_value()
+        # self.full_params['controller_server']['ros__parameters'] = others_data
+        return self.full_params
+        
+        
         
         
             
