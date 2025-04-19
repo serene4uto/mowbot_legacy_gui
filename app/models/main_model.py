@@ -15,6 +15,8 @@ class MainModel(QObject):
     signal_on_waypoints_loaded = pyqtSignal(str, dict) # (file_path, waypoints)
     signal_on_params_loaded = pyqtSignal(str, dict) # (file_path, params)
     
+    signal_on_settings_param_loaded = pyqtSignal(str, dict) # (file_path, params)
+    
     """
     MainModel aggregates all application models.
     """
@@ -105,6 +107,17 @@ class MainModel(QObject):
             self.signal_on_params_loaded.emit(
                 file_name, params
             )        
+            
+    def load_yaml_param_settings_file(self, file_path: str):
         
+        with open(file_path, 'r') as file:
+            yaml_data = yaml.safe_load(file)
+        
+        return yaml_data
+    
+    def save_yaml_param_settings_file(self, file_path: str, yaml_data: dict):
+        with open(file_path, 'w') as file:
+            yaml.dump(yaml_data, file)
+        logger.info(f"YAML file saved to {file_path}")
         
 

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal
 from typing import List, Tuple, Dict, Any
 
+from app.utils.logger import logger
 
 class SettingSliderItem(QWidget):
     def __init__(
@@ -123,6 +124,7 @@ class SettingsTabWidget(QWidget):
 
 
 class SettingsPanelView(QWidget):
+
     signal_load_btn_clicked = pyqtSignal(str)  # str: file path
     signal_save_btn_clicked = pyqtSignal(str)  # str: file path
     
@@ -146,7 +148,7 @@ class SettingsPanelView(QWidget):
         # Create regulated pure pursuit tab
         self.regulated_pure_pursuit_tab = SettingsTabWidget(
             param_configs=[
-                ("lookahead_distance", "Lookahead Distance (m)", 0, 2.0, 0.1),
+                ("lookahead_dist", "Lookahead Distance (m)", 0, 2.0, 0.1),
                 ("lookahead_time", "Lookahead Time (s)", 0, 3.0, 0.1),
                 ("desired_linear_vel", "Desired Linear Velocity (m/s)", 0, 1.0, 0.1),
                 ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.1),
@@ -187,7 +189,7 @@ class SettingsPanelView(QWidget):
         # Load default parameters
         default_params_fp = f"{self._config['mowbot_legacy_data_path']}/params/default.yaml"
         self.signal_load_btn_clicked.emit(default_params_fp)
-    
+           
     def _init_buttons(self):
         """Initialize buttons with consistent styling."""
         self.params_load_btn = QPushButton("Load")
@@ -196,10 +198,6 @@ class SettingsPanelView(QWidget):
         # Apply consistent styling to buttons
         for btn in [self.params_load_btn, self.params_save_btn]:
             btn.setFixedSize(UI_CONSTANTS["BUTTON_WIDTH"], UI_CONSTANTS["BUTTON_HEIGHT"])
-        
-        # Connect button signals
-        self.params_load_btn.clicked.connect(self.on_load_btn_clicked)
-        self.params_save_btn.clicked.connect(self.on_save_btn_clicked)
         
     def _init_ui(self):
         """Initialize the user interface layout."""
@@ -217,7 +215,7 @@ class SettingsPanelView(QWidget):
         layout.addLayout(btn_layout)
         self.setLayout(layout)
     
-    def on_load_btn_clicked(self):
+    def prompt_file_dialog_for_load(self):
         """Load parameters from the file."""
         load_file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -225,10 +223,9 @@ class SettingsPanelView(QWidget):
             f"{self._config['mowbot_legacy_data_path']}/params",
             "YAML Files (*.yaml);;All Files (*)",
         )
-        if load_file_path:
-            self.signal_load_btn_clicked.emit(load_file_path)
+        return load_file_path
         
-    def on_save_btn_clicked(self):
+    def prompt_file_dialog_for_save(self):
         """Save parameters to the file."""
         save_file_path, _ = QFileDialog.getSaveFileName(
             self,
@@ -236,7 +233,41 @@ class SettingsPanelView(QWidget):
             f"{self._config['mowbot_legacy_data_path']}/params",
             "YAML Files (*.yaml);;All Files (*)",
         )
-        if save_file_path:
-            self.signal_save_btn_clicked.emit(save_file_path)
+        return save_file_path
+    
+    def update_load_params(self, yaml_data: dict) -> None:
+        """Update the load parameters with the given YAML data."""
+        # logger.info(f"Updating load parameters with data: {yaml_data}")
+        
+        params_widgets = self.regulated_pure_pursuit_tab.params_widgets
+        rpp_data = yaml_data['controller_server']['ros__parameters']['FollowPath']
+        logger.info(f"Updating load parameters with data: {rpp_data}")
+        params_widgets["lookahead_dist"].set_value(rpp_data['lookahead_dist'])
+        params_widgets["lookahead_time"].set_value(rpp_data['lookahead_time'])
+        params_widgets["desired_linear_vel"].set_value(rpp_data['desired_linear_vel'])
+        params_widgets["regulated_linear_scaling_min_radius"].set_value(rpp_data['regulated_linear_scaling_min_radius'])
+        params_widgets["regulated_linear_scaling_min_speed"].set_value(rpp_data['regulated_linear_scaling_min_speed'])
+        params_widgets["max_angular_accel"].set_value(rpp_data['max_angular_accel'])
+        params_widgets["min_approach_linear_velocity"].set_value(rpp_data['min_approach_linear_velocity'])
+        params_widgets["rotate_to_heading_angular_vel"].set_value(rpp_data['rotate_to_heading_angular_vel'])
+        params_widgets["rotate_to_heading_min_angle"].set_value(rpp_data['rotate_to_heading_min_angle'])
+        
+        params_widgets = self.others_tab.params_widgets
+        others_data = yaml_data['controller_server']['ros__parameters']['general_goal_checker']
+        params_widgets["xy_goal_tolerance"].set_value(others_data['xy_goal_tolerance'])
+        params_widgets["yaw_goal_tolerance"].set_value(others_data['yaw_goal_tolerance'])
+        
+        others_data = yaml_data['controller_server']['ros__parameters']['progress_checker']
+        params_widgets["movement_time_allowance"].set_value(others_data['movement_time_allowance'])
+        params_widgets["required_movement_angle"].set_value(others_data['required_movement_angle'])
+        params_widgets["required_movement_radius"].set_value(others_data['required_movement_radius'])
+        
+        others_data = yaml_data['controller_server']['ros__parameters']
+        params_widgets["failure_tolerance"].set_value(others_data['failure_tolerance'])
+        params_widgets["min_theta_velocity_threshold"].set_value(others_data['min_theta_velocity_threshold'])
+        params_widgets["min_x_velocity_threshold"].set_value(others_data['min_x_velocity_threshold'])
+        
+        
+            
             
     

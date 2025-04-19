@@ -22,6 +22,8 @@ class MenuBoxView(QWidget):
         self.navigator_btn = QPushButton('Waypoint Navigator')
         self.navigator_btn.setFixedHeight(50)
         
+        self.task_menu_grb = QGroupBox('Tasks')
+        
         self._init_ui()
         
         # Optionally, highlight the default button (e.g., Waypoint Logger).
@@ -37,17 +39,16 @@ class MenuBoxView(QWidget):
         menu_layout.addWidget(self.settings_btn)
         
         # Create a nested group box for task-related buttons
-        task_menu_grb = QGroupBox('Tasks')
-        task_menu_grb.setStyleSheet("QGroupBox { font-size: 14px; font-weight: bold; }")
+        self.task_menu_grb.setStyleSheet("QGroupBox { font-size: 14px; font-weight: bold; }")
         task_menu_layout = QVBoxLayout()
-        task_menu_grb.setLayout(task_menu_layout)
+        self.task_menu_grb.setLayout(task_menu_layout)
         task_menu_layout.addWidget(self.logger_btn)
         task_menu_layout.addSpacing(10)
         task_menu_layout.addWidget(self.navigator_btn)
         task_menu_layout.addSpacing(10)
         task_menu_layout.addStretch(1)
         
-        menu_layout.addWidget(task_menu_grb)
+        menu_layout.addWidget(self.task_menu_grb)
         menu_grb.setLayout(menu_layout)
         layout.addWidget(menu_grb)
         

@@ -44,6 +44,9 @@ class MainView(QWidget):
     signal_shutdown_btn_clicked = pyqtSignal()
     signal_restart_btn_clicked = pyqtSignal()
     
+    signal_settings_load_btn_clicked = pyqtSignal(str)  # str: file path
+    signal_settings_save_btn_clicked = pyqtSignal(str)  # str: file path
+    
     def __init__(self, config):
         super().__init__()
         self._config = config
@@ -154,12 +157,19 @@ class MainView(QWidget):
         self.exit_btn.setIconSize(self.exit_btn.size() * 0.6)
         self.exit_btn.setToolTip("Exit Application")
         
-        self.menu_box.setEnabled(False)
-        self.multi_panel.setEnabled(False)
+        self.menu_box.task_menu_grb.setEnabled(False)
+        self.multi_panel.waypoints_logger_panel.setEnabled(False)
+        self.multi_panel.waypoints_navigator_panel.setEnabled(False)
         self.status_bar.setEnabled(False)
         self.localize_btn.setEnabled(False)
         self.localize_btn.setStyleSheet(
             "font-size: 16px; font-weight: bold; color: gray")
+        
+        # alias for signal connections
+        self.signal_settings_load_btn_clicked = \
+            self.multi_panel.settings_panel.signal_load_btn_clicked
+        self.signal_settings_save_btn_clicked = \
+            self.multi_panel.settings_panel.signal_save_btn_clicked
         
         self._init_ui()
         self._connect_button_events()
@@ -222,6 +232,11 @@ class MainView(QWidget):
         self.exit_btn.clicked.connect(self.on_exit_btn_clicked)
         self.shutdown_btn.clicked.connect(self.on_shutdown_btn_clicked)
         self.restart_btn.clicked.connect(self.on_restart_btn_clicked)
+        
+        self.multi_panel.settings_panel.params_load_btn.clicked.connect(
+            self.on_settings_load_btn_clicked)
+        self.multi_panel.settings_panel.params_save_btn.clicked.connect(
+            self.on_settings_save_btn_clicked)
         
     def on_exit_btn_clicked(self):
         """Forward the exit button event."""
@@ -379,6 +394,20 @@ class MainView(QWidget):
         self.signal_nav_wpfl_params_load_btn_clicked.emit(load_file_path)
         
         
+    def on_settings_load_btn_clicked(self):
+        """Forward the settings load button event."""
+        load_file_path = self.multi_panel.settings_panel.prompt_file_dialog_for_load()
+        if not load_file_path:
+            return
+        self.signal_settings_load_btn_clicked.emit(load_file_path)
+        
+    def on_settings_save_btn_clicked(self):
+        """Forward the settings save button event."""
+        save_file_path = self.multi_panel.settings_panel.prompt_file_dialog_for_save()
+        if not save_file_path:
+            return
+        self.signal_settings_save_btn_clicked.emit(save_file_path)
+        
     @pyqtSlot(str)
     def on_signal_bringup_container_status(self, status: str):
         """
@@ -402,8 +431,9 @@ class MainView(QWidget):
             self.localize_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: green")
             self.localize_btn.setText("Start Localization")
-            self.menu_box.setEnabled(True)
-            self.multi_panel.setEnabled(True)
+            self.menu_box.task_menu_grb.setEnabled(True)
+            self.multi_panel.waypoints_logger_panel.setEnabled(True)
+            self.multi_panel.waypoints_navigator_panel.setEnabled(True)
             self.status_bar.setEnabled(True)
             self._is_waiting_for_bringup = None
             
@@ -419,8 +449,9 @@ class MainView(QWidget):
             self.localize_btn.setStyleSheet(
                 "font-size: 16px; font-weight: bold; color: gray")
             self.localize_btn.setText("Start Localization")
-            self.menu_box.setEnabled(False)
-            self.multi_panel.setEnabled(False)
+            self.menu_box.task_menu_grb.setEnabled(False)
+            self.multi_panel.waypoints_logger_panel.setEnabled(False)
+            self.multi_panel.waypoints_navigator_panel.setEnabled(False)
             self.status_bar.setEnabled(False)
             self._is_waiting_for_bringup = None
 
@@ -536,4 +567,15 @@ class MainView(QWidget):
         # Update the parameter info display with the loaded parameters
         self.multi_panel.waypoints_navigator_panel.update_load_params_file_info(
             file_path=file_path)
+        
+        
+    @pyqtSlot(str, dict)
+    def on_signal_settings_param_loaded(self, file_path: str, params: dict):
+        """
+        Slot method to handle the settings parameters loaded signal.
+        """
+        # Update the parameter info display with the loaded parameters
+        self.multi_panel.settings_panel.update_load_params(
+            yaml_data=params,
+        )
         
