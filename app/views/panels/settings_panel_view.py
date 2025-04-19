@@ -1,4 +1,3 @@
-
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -8,6 +7,7 @@ from PyQt5.QtWidgets import (
     QSlider,
     QPushButton,
     QFileDialog,
+    
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from app.utils.logger import logger
@@ -43,7 +43,6 @@ class SettingSliderItem(QWidget):
             singleStep=int(self.step * self.scale_factor),
         )
         self.slider.setFixedWidth(250) # Set fixed width for the slider
-        # self.slider.setFixedHeight(100) # Set fixed height for the slider
         self.slider.setStyleSheet("""
             QSlider::groove:horizontal {
                 height: 20px;  /* Adjust the height of the groove */
@@ -70,13 +69,10 @@ class SettingSliderItem(QWidget):
         layout.addWidget(self.slider)
         layout.addStretch(1)
         self.setLayout(layout)
-        # self.setFixedWidth(500)
     
     def update_label(self, value):
         """Update the label with the current slider value."""
         scaled_value = value / self.scale_factor
-        # Format to remove unnecessary trailing zeros
-        # formatted_value = f"{scaled_value:.2f}".rstrip('0').rstrip('.')
         formatted_value = f"{scaled_value:.2f}"
         self.lb.setText(f"{self.label}: {formatted_value}")
         
@@ -90,10 +86,16 @@ class SettingSliderItem(QWidget):
         self.update_label(set_value * self.scale_factor)
         self.slider.setValue(int(set_value * self.scale_factor))
 
+
 class SettingsPanelView(QWidget):
     
     signal_load_btn_clicked = pyqtSignal(str) # str: file path
     signal_save_btn_clicked = pyqtSignal(str) # str: file path
+    
+    # UI Constants
+    SLIDER_LABEL_WIDTH = 300
+    BUTTON_WIDTH = 200
+    BUTTON_HEIGHT = 100
     
     def __init__(
         self,
@@ -102,71 +104,77 @@ class SettingsPanelView(QWidget):
         super().__init__()
         
         self._config = config
-        
-        # self.setWindowTitle("Settings Panel")
         self._is_params_loaded = False
+        self.last_full_rams = {}
         
-        self.last_params = {}
-        
-        self.params_desired_linear_vel = SettingSliderItem(
-            "Desired Linear Velocity (m/s)",
-            min=0,max=1.0,step=0.1,
-            fixed_width=300,
-        )
-        self.params_lookahead_distance = SettingSliderItem(
-            "Lookahead Distance (m)",
-            min=0, max=5.0, step=0.1,
-            fixed_width=300,
-        )
-        self.params_min_approach_velocity = SettingSliderItem(
-            "Min Approach Velocity (m/s)",
-            min=0, max=2.0, step=0.05,
-            fixed_width=300,
-        )
-        self.params_rotate_to_heading_angular_vel = SettingSliderItem(
-            "Rotate to Heading Angular Velocity (rad/s)",
-            min=0, max=2.0, step=0.1,
-            fixed_width=300,
-        )
-        self.params_rotate_to_heading_min_angle = SettingSliderItem(
-            "Rotate to Heading Min Angle (rad)",
-            min=0, max=3.14, step=0.1,
-            fixed_width=300,
-        )
-        
-        self.params_load_btn = QPushButton("Load")
-        self.params_load_btn.setFixedWidth(200)
-        self.params_load_btn.setFixedHeight(100)
-        
-        self.params_save_btn = QPushButton("Save")
-        self.params_save_btn.setFixedWidth(200)
-        self.params_save_btn.setFixedHeight(100)
-        
+        self._init_slider_params()
+        self._init_buttons()
         self._init_ui()
         
+        # Load default parameters
         default_params_fp = \
             self._config['mowbot_legacy_data_path'] + '/params/default.yaml'
         self.signal_load_btn_clicked.emit(default_params_fp)
+    
+    def _init_slider_params(self):
+        """Initialize all parameter sliders with their configurations."""
+        # Parameter definitions - easier to maintain and modify
+        param_configs = [
+            ("lookahead_distance", "Lookahead Distance (m)", 0, 2.0, 0.1),
+            ("lookahead_time", "Lookahead Time (s)", 0, 3.0, 0.1),
+            ("desired_linear_vel", "Desired Linear Velocity (m/s)", 0, 1.0, 0.1),
+            ("regulated_linear_scaling_min_radius", "Regulated Linear Scaling Min Radius (m)", 0, 2.0, 0.1),
+            ("regulated_linear_scaling_min_speed", "Regulated Linear Scaling Min Speed (m/s)", 0, 1.0, 0.1),
+            ("max_angular_accel", "Max Angular Acceleration (rad/s^2)", 0, 3.2, 0.1),
+            ("min_approach_linear_velocity", "Min Approach Linear Velocity (m/s)", 0, 2.0, 0.05),
+            ("rotate_to_heading_angular_vel", "Rotate to Heading Angular Velocity (rad/s)", 0, 2.0, 0.1),
+            ("rotate_to_heading_min_angle", "Rotate to Heading Min Angle (rad)", 0, 3.14, 0.1),
+        ]
+        
+        self.adjustable_params_widget = {}
+        
+        for param_id, label, min_val, max_val, step in param_configs:
+            slider = SettingSliderItem(
+                label,
+                min=min_val,
+                max=max_val,
+                step=step,
+                fixed_width=self.SLIDER_LABEL_WIDTH
+            )
+            setattr(self, f"params_{param_id}", slider)
+            self.adjustable_params_widget[param_id] = slider
+    
+    def _init_buttons(self):
+        """Initialize buttons with consistent styling."""
+        self.params_load_btn = QPushButton("Load")
+        self.params_save_btn = QPushButton("Save")
+        
+        # Apply consistent styling to buttons
+        for btn in [self.params_load_btn, self.params_save_btn]:
+            btn.setFixedWidth(self.BUTTON_WIDTH)
+            btn.setFixedHeight(self.BUTTON_HEIGHT)
+        
+        # Connect button signals
+        self.params_load_btn.clicked.connect(self.on_load_btn_clicked)
+        self.params_save_btn.clicked.connect(self.on_save_btn_clicked)
         
     def _init_ui(self):
+        """Initialize the user interface layout."""
         layout = QHBoxLayout()
         
-        flp_grbox = QGroupBox("Regulated Pure Pursuit")
-        flp_layout = QVBoxLayout()
+        # Parameters group box
+        params_group = QGroupBox("Regulated Pure Pursuit")
+        params_layout = QVBoxLayout()
         
-        flp_layout.addWidget(self.params_desired_linear_vel)
-        flp_layout.addSpacing(10)
-        flp_layout.addWidget(self.params_lookahead_distance)
-        flp_layout.addSpacing(10)
-        flp_layout.addWidget(self.params_min_approach_velocity)
-        flp_layout.addSpacing(10)
-        flp_layout.addWidget(self.params_rotate_to_heading_angular_vel)
-        flp_layout.addSpacing(10)
-        flp_layout.addWidget(self.params_rotate_to_heading_min_angle)
-        flp_layout.addStretch(1)
-        flp_grbox.setLayout(flp_layout)
-        layout.addWidget(flp_grbox)
+        for widget in self.adjustable_params_widget.values():
+            params_layout.addWidget(widget)
+            params_layout.addSpacing(10)
         
+        params_layout.addStretch(1)
+        params_group.setLayout(params_layout)
+        layout.addWidget(params_group)
+        
+        # Buttons layout
         layout.addStretch(1)
         btn_layout = QVBoxLayout()
         btn_layout.addWidget(self.params_load_btn)
@@ -175,38 +183,26 @@ class SettingsPanelView(QWidget):
         btn_layout.addStretch(1)
         layout.addLayout(btn_layout)
         
-        
         self.setLayout(layout)
-
-
     
     def on_load_btn_clicked(self):
         """Load parameters from the file."""
-        
-        # open file dialog to select the parameter file
         load_file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Parameters File",
             self._config['mowbot_legacy_data_path'] + '/params',
             "YAML Files (*.yaml);;All Files (*)",
         )
-        if not load_file_path:
-            return
-        self.signal_load_btn_clicked.emit(load_file_path)
+        if load_file_path:
+            self.signal_load_btn_clicked.emit(load_file_path)
         
     def on_save_btn_clicked(self):
         """Save parameters to the file."""
-        
-        # open file dialog to select the parameter file
         save_file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Select Parameters File",
             self._config['mowbot_legacy_data_path'] + '/params',
             "YAML Files (*.yaml);;All Files (*)",
         )
-        if not save_file_path:
-            return
-        self.signal_save_btn_clicked.emit(save_file_path)
-        
-    
-        
+        if save_file_path:
+            self.signal_save_btn_clicked.emit(save_file_path)
