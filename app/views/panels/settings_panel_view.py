@@ -1,3 +1,5 @@
+import os
+from datetime import datetime
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider,
     QPushButton, QFileDialog, QTabWidget
@@ -240,10 +242,13 @@ class SettingsPanelView(QWidget):
         
     def prompt_file_dialog_for_save(self):
         """Save parameters to the file."""
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        default_filename = f"params_{current_time}.yaml"
+        default_path = f"{self._config['mowbot_legacy_data_path']}/params"
         save_file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Select Parameters File",
-            f"{self._config['mowbot_legacy_data_path']}/params",
+            os.path.join(default_path, default_filename),
             "YAML Files (*.yaml);;All Files (*)",
         )
         return save_file_path

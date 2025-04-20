@@ -16,5 +16,5 @@ docker run -i --rm \
   ghcr.io/serene4uto/mowbot-legacy-gui:latest /bin/bash -c " \
         export QT_XCB_GL_INTEGRATION=none && \
         cd /mowbot_legacy_gui && \
-        python3 -m app.main \
+        /bin/python3 -m app.main \
     "

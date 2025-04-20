@@ -95,12 +95,12 @@ def main():
     window.setWindowFlags(Qt.FramelessWindowHint)
         
     # Make window full screen
-    # window.showFullScreen()
-    window.showMaximized()
+    window.showFullScreen()
+    # window.showMaximized()
     window.raise_() # Bring the window to the front
     
     # Set the window to be non-resizable
-    window.setFixedSize(window.size())
+    # window.setFixedSize(window.size())
     
     # Run the app
     sys.exit(app.exec())
