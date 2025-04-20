@@ -1,6 +1,6 @@
 # qt5-qmake
-PyQt5
-PyQtWebEngine
+# PyQt5
+# PyQtWebEngine
 termcolor
 websockets
 pydantic
